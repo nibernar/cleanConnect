@@ -1,0 +1,20 @@
+diff --git a/node_modules/date-fns/locale/sl.cjs b/node_modules/date-fns/locale/sl.cjs
+index 64e0776..be38d0f 100644
+--- a/node_modules/date-fns/locale/sl.cjs
++++ b/node_modules/date-fns/locale/sl.cjs
+@@ -1,10 +1,10 @@
+ "use strict";
+ exports.sl = void 0;
+-var _index = require("./sl/_lib/formatDistance.cjs");
+-var _index2 = require("./sl/_lib/formatLong.cjs");
+-var _index3 = require("./sl/_lib/formatRelative.cjs");
+-var _index4 = require("./sl/_lib/localize.cjs");
+-var _index5 = require("./sl/_lib/match.cjs");
++var _index = require("./_lib/formatDistance.cjs");
++var _index2 = require("./_lib/formatLong.cjs");
++var _index3 = require("./_lib/formatRelative.cjs");
++var _index4 = require("./_lib/localize.cjs");
++var _index5 = require("./_lib/match.cjs");
+ 
+ /**
+  * @category Locales

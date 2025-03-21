@@ -1,0 +1,187 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import { getStorageItem, setStorageItem, removeStorageItem } from '../utils/storageUtils';
+import authService from '../services/authService';
+import { router } from 'expo-router';
+import { syncUserWithAuth } from './slices/userSlice';
+
+// Définition des types d'actions pour être utilisés à la fois dans authSlice et authActions
+export const AUTH_ACTION_TYPES = {
+  LOGIN: 'auth/login',
+  REGISTER_HOST: 'auth/registerHost',
+  REGISTER_CLEANER: 'auth/registerCleaner',
+  LOGOUT: 'auth/logout',
+  RESTORE_SESSION: 'auth/restoreSession',
+  VERIFY_EMAIL: 'auth/verifyEmail',
+  REQUEST_PASSWORD_RESET: 'auth/requestPasswordReset',
+  RESET_PASSWORD: 'auth/resetPassword',
+};
+
+// Actions asynchrones
+export const login = createAsyncThunk(
+  AUTH_ACTION_TYPES.LOGIN,
+  async ({ email, password }, { rejectWithValue, dispatch }) => {
+    try {
+      const response = await authService.login(email, password);
+      await setStorageItem('token', response.token);
+      
+      // Synchroniser les données utilisateur avec userSlice
+      dispatch(syncUserWithAuth(response.user));
+      
+      // Redirection vers le tableau de bord central qui redirigera en fonction du rôle
+      router.replace('/dashboard');
+      
+      return response;
+    } catch (error) {
+      console.error('Login error:', error);
+      return rejectWithValue(
+        error.message || 'Échec de connexion. Vérifiez vos identifiants.'
+      );
+    }
+  }
+);
+
+export const registerHost = createAsyncThunk(
+  AUTH_ACTION_TYPES.REGISTER_HOST,
+  async (userData, { rejectWithValue, dispatch }) => {
+    try {
+      console.log('RegisterHost action called with:', userData);
+      const response = await authService.registerHost(userData);
+      console.log('RegisterHost response:', response);
+      
+      await setStorageItem('token', response.token);
+      
+      // Synchroniser les données utilisateur avec userSlice
+      dispatch(syncUserWithAuth(response.user));
+      
+      // Redirection vers le tableau de bord central
+      router.replace('/dashboard');
+      
+      return response;
+    } catch (error) {
+      console.error('RegisterHost error:', error);
+      return rejectWithValue(
+        error.message || 'Échec d\'inscription. Veuillez réessayer.'
+      );
+    }
+  }
+);
+
+export const registerCleaner = createAsyncThunk(
+  AUTH_ACTION_TYPES.REGISTER_CLEANER,
+  async (userData, { rejectWithValue, dispatch }) => {
+    try {
+      console.log('RegisterCleaner action called with:', userData);
+      const response = await authService.registerCleaner(userData);
+      console.log('RegisterCleaner response:', response);
+      
+      await setStorageItem('token', response.token);
+      
+      // Synchroniser les données utilisateur avec userSlice
+      dispatch(syncUserWithAuth(response.user));
+      
+      // Redirection vers le tableau de bord central
+      router.replace('/dashboard');
+      
+      return response;
+    } catch (error) {
+      console.error('RegisterCleaner error:', error);
+      return rejectWithValue(
+        error.message || 'Échec d\'inscription. Veuillez réessayer.'
+      );
+    }
+  }
+);
+
+export const logout = createAsyncThunk(
+  AUTH_ACTION_TYPES.LOGOUT,
+  async (_, { rejectWithValue, dispatch }) => {
+    try {
+      await removeStorageItem('token');
+      await removeStorageItem('refreshToken');
+      
+      // Réinitialiser également les données utilisateur dans userSlice
+      dispatch(syncUserWithAuth(null));
+      
+      // Redirection après déconnexion
+      router.replace('/login');
+      
+      return null;
+    } catch (error) {
+      console.error('Logout error:', error);
+      return rejectWithValue('Échec de déconnexion');
+    }
+  }
+);
+
+export const restoreSession = createAsyncThunk(
+  AUTH_ACTION_TYPES.RESTORE_SESSION,
+  async (_, { rejectWithValue, dispatch }) => {
+    try {
+      const token = await getStorageItem('token');
+      if (!token) {
+        console.log('No token found during session restore');
+        return rejectWithValue('No token found');
+      }
+      
+      console.log('Token found, getting current user...');
+      const user = await authService.getCurrentUser();
+      console.log('Current user retrieved successfully', user);
+      
+      // IMPORTANT: Synchroniser les données utilisateur avec userSlice
+      // C'est cette ligne qui corrige le problème "Bonjour, Utilisateur"
+      dispatch(syncUserWithAuth(user));
+      
+      return { token, user };
+    } catch (error) {
+      console.error('Session restore error:', error);
+      await removeStorageItem('token');
+      await removeStorageItem('refreshToken');
+      
+      return rejectWithValue(
+        error.message || 'Session invalide ou expirée'
+      );
+    }
+  }
+);
+
+export const verifyEmail = createAsyncThunk(
+  AUTH_ACTION_TYPES.VERIFY_EMAIL,
+  async (verificationToken, { rejectWithValue }) => {
+    try {
+      const response = await authService.verifyEmail(verificationToken);
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.message || 'Échec de vérification d\'email'
+      );
+    }
+  }
+);
+
+export const requestPasswordReset = createAsyncThunk(
+  AUTH_ACTION_TYPES.REQUEST_PASSWORD_RESET,
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await authService.requestPasswordReset(email);
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.message || 'Échec de demande de réinitialisation'
+      );
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  AUTH_ACTION_TYPES.RESET_PASSWORD,
+  async ({ token, newPassword }, { rejectWithValue }) => {
+    try {
+      const response = await authService.resetPassword(token, newPassword);
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.message || 'Échec de réinitialisation de mot de passe'
+      );
+    }
+  }
+);

@@ -1,0 +1,12 @@
+import { Redirect } from 'expo-router';
+
+// Cette configuration est essentielle pour masquer ce fichier de la navigation par onglets
+// tout en conservant sa fonctionnalité de redirection
+export const unstable_settings = {
+  isHidden: true,
+};
+
+export default function Index() {
+  // Redirection vers le tableau de bord par défaut
+  return <Redirect href="/(host)/dashboard" />;
+}

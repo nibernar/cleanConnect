@@ -1,0 +1,273 @@
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import userService from '../../services/userService';
+
+// Async thunks
+export const fetchProfile = createAsyncThunk(
+  'user/fetchProfile',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await userService.getProfile();
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Échec de récupération du profil'
+      );
+    }
+  }
+);
+
+export const updateProfile = createAsyncThunk(
+  'user/updateProfile',
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const response = await userService.updateProfile(profileData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Échec de mise à jour du profil'
+      );
+    }
+  }
+);
+
+export const updateProfilePicture = createAsyncThunk(
+  'user/updateProfilePicture',
+  async (imageFile, { rejectWithValue }) => {
+    try {
+      const response = await userService.updateProfilePicture(imageFile);
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Échec de mise à jour de la photo de profil'
+      );
+    }
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  'user/changePassword',
+  async ({ currentPassword, newPassword }, { rejectWithValue }) => {
+    try {
+      const response = await userService.changePassword(currentPassword, newPassword);
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Échec de changement de mot de passe'
+      );
+    }
+  }
+);
+
+export const fetchCleanerPreferences = createAsyncThunk(
+  'user/fetchCleanerPreferences',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await userService.getCleanerPreferences();
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Échec de récupération des préférences'
+      );
+    }
+  }
+);
+
+export const updateCleanerPreferences = createAsyncThunk(
+  'user/updateCleanerPreferences',
+  async (preferencesData, { rejectWithValue }) => {
+    try {
+      const response = await userService.updateCleanerPreferences(preferencesData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Échec de mise à jour des préférences'
+      );
+    }
+  }
+);
+
+export const updateBankInfo = createAsyncThunk(
+  'user/updateBankInfo',
+  async (bankData, { rejectWithValue }) => {
+    try {
+      const response = await userService.updateBankInfo(bankData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Échec de mise à jour des informations bancaires'
+      );
+    }
+  }
+);
+
+// Initial state
+const initialState = {
+  profile: null,
+  user: null, // Ajout d'un champ 'user' pour compatibilité avec les composants qui l'utiliseraient directement
+  preferences: null,
+  isLoading: false,
+  error: null,
+  updateStatus: null,
+  passwordChangeStatus: null,
+};
+
+// Slice
+const userSlice = createSlice({
+  name: 'user',
+  initialState,
+  reducers: {
+    clearUserError: (state) => {
+      state.error = null;
+    },
+    clearUpdateStatus: (state) => {
+      state.updateStatus = null;
+    },
+    clearPasswordChangeStatus: (state) => {
+      state.passwordChangeStatus = null;
+    },
+    // Nouvelle action pour synchroniser avec auth
+    syncUserWithAuth: (state, action) => {
+      state.profile = action.payload;
+      // Pour compatibilité avec les composants attendant user.user
+      state.user = action.payload;
+      console.log('User state synchronized with auth state:', action.payload);
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Fetch profile
+      .addCase(fetchProfile.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.profile = action.payload;
+        state.user = action.payload; // Synchronise également user pour la compatibilité
+      })
+      .addCase(fetchProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Update profile
+      .addCase(updateProfile.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.updateStatus = 'pending';
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.profile = action.payload;
+        state.user = action.payload; // Synchronise également user pour la compatibilité
+        state.updateStatus = 'success';
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.updateStatus = 'failed';
+      })
+      
+      // Update profile picture
+      .addCase(updateProfilePicture.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.updateStatus = 'pending';
+      })
+      .addCase(updateProfilePicture.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (state.profile) {
+          state.profile.profileImage = action.payload.profileImage;
+          // Synchroniser également les données d'image pour user
+          if (state.user) {
+            state.user.profileImage = action.payload.profileImage;
+          }
+        }
+        state.updateStatus = 'success';
+      })
+      .addCase(updateProfilePicture.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.updateStatus = 'failed';
+      })
+      
+      // Change password
+      .addCase(changePassword.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.passwordChangeStatus = 'pending';
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.isLoading = false;
+        state.passwordChangeStatus = 'success';
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.passwordChangeStatus = 'failed';
+      })
+      
+      // Fetch cleaner preferences
+      .addCase(fetchCleanerPreferences.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchCleanerPreferences.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.preferences = action.payload;
+      })
+      .addCase(fetchCleanerPreferences.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Update cleaner preferences
+      .addCase(updateCleanerPreferences.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.updateStatus = 'pending';
+      })
+      .addCase(updateCleanerPreferences.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.preferences = action.payload;
+        state.updateStatus = 'success';
+      })
+      .addCase(updateCleanerPreferences.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.updateStatus = 'failed';
+      })
+      
+      // Update bank info
+      .addCase(updateBankInfo.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.updateStatus = 'pending';
+      })
+      .addCase(updateBankInfo.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (state.profile) {
+          state.profile.bankInfo = action.payload.bankInfo;
+          // Synchroniser également les infos bancaires pour user
+          if (state.user) {
+            state.user.bankInfo = action.payload.bankInfo;
+          }
+        }
+        state.updateStatus = 'success';
+      })
+      .addCase(updateBankInfo.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.updateStatus = 'failed';
+      });
+  }
+});
+
+export const { 
+  clearUserError, 
+  clearUpdateStatus, 
+  clearPasswordChangeStatus,
+  syncUserWithAuth
+} = userSlice.actions;
+
+export default userSlice.reducer;
