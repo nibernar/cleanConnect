@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Alert, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 // Replace direct import with our platform-specific abstraction
 import { MapView, Marker } from '../../components/map';
@@ -12,14 +11,13 @@ import { fetchBookingById, cancelBooking } from '../../redux/slices/bookingsSlic
 import Rating from '../../components/common/Rating';
 import { colors, spacing, typography, shadows } from '../../utils/theme';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
+import { router } from 'expo-router'; // Importer router
 
 /**
  * Screen for displaying detailed information about a booking
  */
-const BookingDetailScreen = () => {
+const BookingDetailScreen = ({ route }) => {
   const dispatch = useDispatch();
-  const navigation = useNavigation();
-  const route = useRoute();
   const { bookingId } = route.params;
   const { currentBooking, loading } = useSelector(state => state.bookings);
   const [showFullAddress, setShowFullAddress] = useState(false);
@@ -90,7 +88,7 @@ const BookingDetailScreen = () => {
           style: "destructive",
           onPress: () => {
             dispatch(cancelBooking(bookingId));
-            navigation.goBack();
+            router.back();
           }
         }
       ]
@@ -99,14 +97,14 @@ const BookingDetailScreen = () => {
 
   const handleStartMission = () => {
     // Navigate to tasks screen to start the cleaning mission
-    navigation.navigate('Tasks', { bookingId });
+    router.push('Tasks', { bookingId });
   };
 
   const handleContactHost = () => {
     if (currentBooking?.host?.phone) {
       Linking.openURL(`tel:${currentBooking.host.phone}`);
     } else {
-      navigation.navigate('Chat', { 
+      router.push('Chat', { 
         conversationId: currentBooking.conversationId || 'new',
         recipientId: currentBooking.host.id,
         recipientName: `${currentBooking.host.firstName} ${currentBooking.host.lastName}`
@@ -202,7 +200,7 @@ const BookingDetailScreen = () => {
           />
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
           >
             <Ionicons name="arrow-back" size={24} color={colors.background} />
           </TouchableOpacity>

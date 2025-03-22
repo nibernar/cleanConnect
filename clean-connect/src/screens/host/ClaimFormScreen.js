@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Yup from 'yup';
 import { Formik } from 'formik';
+import { router } from 'expo-router'; // Importer router
 
 const validationSchema = Yup.object().shape({
   issueType: Yup.string().required('Veuillez sélectionner un type de problème'),
@@ -18,7 +19,7 @@ const validationSchema = Yup.object().shape({
   }),
 });
 
-const ClaimFormScreen = ({ route, navigation }) => {
+const ClaimFormScreen = ({ route }) => {
   const { listingId, bookingId } = route.params;
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
@@ -64,7 +65,7 @@ const ClaimFormScreen = ({ route, navigation }) => {
       Alert.alert(
         'Réclamation envoyée',
         'Votre réclamation a été soumise avec succès. Nous la traiterons dans les plus brefs délais.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (error) {
       Alert.alert('Erreur', "Une erreur est survenue lors de l'envoi de votre réclamation. Veuillez réessayer.");
@@ -232,7 +233,7 @@ const ClaimFormScreen = ({ route, navigation }) => {
               
               <Button
                 mode="text"
-                onPress={() => navigation.goBack()}
+                onPress={() => router.back()}
                 style={styles.cancelButton}
               >
                 Annuler

@@ -6,8 +6,9 @@ import { fetchInvoiceDetail, downloadInvoice } from '../../redux/actions/invoice
 import { MaterialIcons } from '@expo/vector-icons';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import { formatCurrency } from '../../utils/formatUtils';
+import { router } from 'expo-router'; // Importer router
 
-const InvoiceDetailScreen = ({ route, navigation }) => {
+const InvoiceDetailScreen = ({ route }) => {
   const { invoiceId } = route.params;
   const dispatch = useDispatch();
   const [invoice, setInvoice] = useState(null);
@@ -67,7 +68,7 @@ const InvoiceDetailScreen = ({ route, navigation }) => {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Impossible de charger les détails de la facture</Text>
-        <Button mode="contained" onPress={() => navigation.goBack()} style={styles.button}>
+        <Button mode="contained" onPress={() => router.back()} style={styles.button}>
           Retour
         </Button>
       </View>

@@ -13,8 +13,9 @@ import { getMessages, sendMessage } from '../../redux/slices/messagesSlice';
 import MessageBubble from '../../components/messaging/MessageBubble';
 import ChatInput from '../../components/messaging/ChatInput';
 import colors from '../../utils/colors';
+import { router } from 'expo-router'; // Importer router
 
-const ChatScreen = ({ route, navigation }) => {
+const ChatScreen = ({ route }) => {
   const { conversationId, recipientName } = route.params;
   const dispatch = useDispatch();
   const { currentConversation, loading, error } = useSelector(state => state.messages);
@@ -24,8 +25,8 @@ const ChatScreen = ({ route, navigation }) => {
   const flatListRef = useRef();
   
   useEffect(() => {
-    navigation.setOptions({
-      title: recipientName || 'Discussion',
+    router.setOptions({
+      title: recipientName || 'Discussion', // Utilisation de router pour définir le titre
     });
     
     dispatch(getMessages(conversationId));
@@ -38,7 +39,7 @@ const ChatScreen = ({ route, navigation }) => {
     }, 10000); // Poll every 10 seconds
     
     return () => clearInterval(interval);
-  }, [dispatch, conversationId, recipientName, navigation]);
+  }, [dispatch, conversationId, recipientName]);
   
   useEffect(() => {
     // Scroll to bottom when messages change

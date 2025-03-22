@@ -4,8 +4,9 @@ import { Button, TextInput, Card, Title, Paragraph, RadioButton } from 'react-na
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchApplicationDetail, processPayment } from '../../redux/actions/hostActions';
 import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router'; // Importer router
 
-const PaymentScreen = ({ route, navigation }) => {
+const PaymentScreen = ({ route }) => {
   const { applicationId, listingId } = route.params;
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
@@ -83,7 +84,7 @@ const PaymentScreen = ({ route, navigation }) => {
       Alert.alert(
         'Paiement réussi',
         'Votre paiement a été traité avec succès. La réservation est confirmée.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Dashboard') }]
+        [{ text: 'OK', onPress: () => router.push('Dashboard') }]
       );
     } catch (error) {
       Alert.alert('Erreur', "Une erreur s'est produite lors du traitement du paiement");
@@ -104,7 +105,7 @@ const PaymentScreen = ({ route, navigation }) => {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Impossible de charger les détails de la réservation</Text>
-        <Button mode="contained" onPress={() => navigation.goBack()} style={styles.button}>
+        <Button mode="contained" onPress={() => router.back()} style={styles.button}>
           Retour
         </Button>
       </View>
@@ -263,7 +264,7 @@ const PaymentScreen = ({ route, navigation }) => {
         
         <Button
           mode="text"
-          onPress={() => navigation.goBack()}
+          onPress={() => router.back()}
           style={styles.cancelButton}
           disabled={processing}
         >

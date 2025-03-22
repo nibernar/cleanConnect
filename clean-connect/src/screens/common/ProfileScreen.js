@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getUserProfile, updateUserProfile, logout } from '../../redux/slices/userSlice';
+import { fetchProfile, updateProfile, logout } from '../../redux/slices/userSlice';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 const ProfileScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { user, loading, error } = useSelector((state) => state.user);
-  const { userType } = useSelector((state) => state.auth);
+  const { token, isAuthenticated, user: authUser } = useSelector((state) => state.auth);
   
   const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
@@ -27,18 +27,28 @@ const ProfileScreen = ({ navigation }) => {
   });
   
   useEffect(() => {
-    dispatch(getUserProfile());
-  }, [dispatch]);
+    // Log debug information
+    console.log('ProfileScreen - Auth state:', { isAuthenticated, hasToken: !!token });
+    console.log('ProfileScreen - Current user state:', { hasUser: !!user });
+    
+    // Fetch profile data if authenticated but no user data
+    if (isAuthenticated && token && (!user || Object.keys(user).length === 0)) {
+      console.log('ProfileScreen - Fetching user profile data');
+      dispatch(fetchProfile());
+    }
+  }, [dispatch, isAuthenticated, token, user]);
   
   useEffect(() => {
+    // When user data changes, update the form data
     if (user) {
+      console.log('ProfileScreen - Updating form with user data:', user);
       setFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         companyName: user.companyName || '',
         email: user.email || '',
         phone: user.phone || '',
-        location: user.location || '',
+        location: user.location?.city || '',
         iban: user.iban || '',
       });
       setProfileImage(user.profileImage || null);
@@ -50,10 +60,12 @@ const ProfileScreen = ({ navigation }) => {
   };
   
   const handleSubmit = () => {
-    dispatch(updateUserProfile({ 
+    const updateData = {
       ...formData,
-      profileImage
-    }));
+      profileImage,
+    };
+    console.log('ProfileScreen - Submitting profile update:', updateData);
+    dispatch(updateProfile(updateData));
     setIsEditing(false);
   };
   
@@ -68,6 +80,11 @@ const ProfileScreen = ({ navigation }) => {
     );
   };
   
+  const refreshProfile = () => {
+    console.log('ProfileScreen - Manually refreshing profile data');
+    dispatch(fetchProfile());
+  };
+  
   if (loading && !user) {
     return (
       <View style={styles.centeredContainer}>
@@ -80,10 +97,13 @@ const ProfileScreen = ({ navigation }) => {
     return (
       <View style={styles.centeredContainer}>
         <Text>Erreur lors du chargement du profil.</Text>
-        <Button title="Réessayer" onPress={() => dispatch(getUserProfile())} />
+        <Button title="Réessayer" onPress={refreshProfile} style={styles.retryButton} />
       </View>
     );
   }
+  
+  // Determine user type from either user data or auth data
+  const userType = user?.role || authUser?.role || 'host';
   
   return (
     <ScrollView style={styles.container}>
@@ -207,7 +227,7 @@ const ProfileScreen = ({ navigation }) => {
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Localisation:</Text>
-              <Text style={styles.infoValue}>{formData.location}</Text>
+              <Text style={styles.infoValue}>{formData.location || 'Non renseignée'}</Text>
             </View>
           </>
         )}
@@ -244,7 +264,7 @@ const ProfileScreen = ({ navigation }) => {
       <View style={styles.navigationSection}>
         <TouchableOpacity 
           style={styles.navigationButton}
-          onPress={() => navigation.navigate('InvoicesScreen')}
+          onPress={() => router.push('InvoicesScreen')}
         >
           <Ionicons name="document-text-outline" size={24} color={colors.text} />
           <Text style={styles.navigationButtonText}>Mes factures</Text>
@@ -253,7 +273,7 @@ const ProfileScreen = ({ navigation }) => {
         
         <TouchableOpacity 
           style={styles.navigationButton}
-          onPress={() => navigation.navigate('Settings')}
+          onPress={() => router.push('Settings')}
         >
           <Ionicons name="settings-outline" size={24} color={colors.text} />
           <Text style={styles.navigationButtonText}>Paramètres</Text>
@@ -263,7 +283,7 @@ const ProfileScreen = ({ navigation }) => {
         {userType === 'cleaner' && (
           <TouchableOpacity 
             style={styles.navigationButton}
-            onPress={() => navigation.navigate('PreferencesScreen')}
+            onPress={() => router.push('PreferencesScreen')}
           >
             <Ionicons name="options-outline" size={24} color={colors.text} />
             <Text style={styles.navigationButtonText}>Préférences de travail</Text>
@@ -279,6 +299,16 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={[styles.navigationButtonText, styles.logoutText]}>Déconnexion</Text>
         </TouchableOpacity>
       </View>
+      
+      {/* Debug button - only visible in development mode */}
+      {__DEV__ && (
+        <TouchableOpacity 
+          style={styles.debugButton}
+          onPress={refreshProfile}
+        >
+          <Text style={styles.debugButtonText}>Rafraîchir profil</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
@@ -411,6 +441,19 @@ const styles = StyleSheet.create({
   logoutText: {
     color: colors.error,
   },
+  retryButton: {
+    marginTop: 20,
+  },
+  debugButton: {
+    margin: 15,
+    padding: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  debugButtonText: {
+    color: colors.textLight,
+  }
 });
 
 export default ProfileScreen;

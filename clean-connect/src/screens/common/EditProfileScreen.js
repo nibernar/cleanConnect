@@ -8,8 +8,9 @@ import Card from '../../components/common/Card';
 import ImagePicker from '../../components/common/ImagePicker';
 import colors from '../../utils/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router'; // Importer router
 
-const EditProfileScreen = ({ navigation, route }) => {
+const EditProfileScreen = ({ route }) => {
   const dispatch = useDispatch();
   const { user, loading, error } = useSelector((state) => state.user);
   const { userType } = useSelector((state) => state.auth);
@@ -53,11 +54,11 @@ const EditProfileScreen = ({ navigation, route }) => {
       ...formData,
       profileImage
     }));
-    navigation.goBack();
+    router.back(); // Utiliser router pour revenir en arrière
   };
   
   const handleCancel = () => {
-    navigation.goBack();
+    router.back(); // Utiliser router pour revenir en arrière
   };
   
   if (loading && !user) {

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { router } from 'expo-router';
 import { View, StyleSheet, FlatList, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getNotifications, markAsRead } from '../../redux/slices/notificationsSlice';
+import { fetchNotifications, markAsRead } from '../../redux/slices/notificationsSlice';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../utils/colors';
 
@@ -11,12 +12,12 @@ const NotificationsScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    dispatch(getNotifications());
+    dispatch(fetchNotifications());
   }, [dispatch]);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    dispatch(getNotifications()).finally(() => setRefreshing(false));
+    dispatch(fetchNotifications()).finally(() => setRefreshing(false));
   };
 
   const handleNotificationPress = (notification) => {
@@ -28,32 +29,32 @@ const NotificationsScreen = ({ navigation }) => {
     // Navigate based on notification type
     switch (notification.type) {
       case 'NEW_APPLICATION':
-        navigation.navigate('ApplicationsScreen', { listingId: notification.data.listingId });
+        router.push('ApplicationsScreen', { listingId: notification.data.listingId });
         break;
       case 'APPLICATION_ACCEPTED':
-        navigation.navigate('BookingDetailScreen', { bookingId: notification.data.bookingId });
+        router.push('BookingDetailScreen', { bookingId: notification.data.bookingId });
         break;
       case 'BOOKING_CONFIRMED':
-        navigation.navigate('BookingDetailScreen', { bookingId: notification.data.bookingId });
+        router.push('BookingDetailScreen', { bookingId: notification.data.bookingId });
         break;
       case 'PAYMENT_RECEIVED':
-        navigation.navigate('InvoicesScreen');
+        router.push('InvoicesScreen');
         break;
       case 'TASK_COMPLETED':
-        navigation.navigate('BookingDetailScreen', { bookingId: notification.data.bookingId });
+        router.push('BookingDetailScreen', { bookingId: notification.data.bookingId });
         break;
       case 'NEW_REVIEW':
-        navigation.navigate('ProfileScreen', { tab: 'reviews' });
+        router.push('ProfileScreen', { tab: 'reviews' });
         break;
       case 'NEW_MESSAGE':
-        navigation.navigate('ChatScreen', { 
+        router.push('ChatScreen', { 
           conversationId: notification.data.conversationId,
           recipientName: notification.data.senderName
         });
         break;
       default:
         // Default navigation
-        navigation.navigate('DashboardScreen');
+        router.push('DashboardScreen');
     }
   };
 

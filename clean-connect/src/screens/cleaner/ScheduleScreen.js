@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { fetchCleanerBookings } from '../../redux/slices/bookingsSlice';
 import BookingCard from '../../components/cleaner/BookingCard';
 import { colors, spacing, typography, shadows } from '../../utils/theme';
+import { router } from 'expo-router'; // Importer router
 
 /**
  * Screen for displaying cleaner's schedule and bookings
@@ -92,7 +93,7 @@ const ScheduleScreen = ({ navigation }) => {
   });
 
   const handleBookingPress = (booking) => {
-    navigation.navigate('BookingDetail', { bookingId: booking.id });
+    router.push('BookingDetail', { bookingId: booking.id });
   };
 
   const renderBookingItem = ({ item }) => (
@@ -169,7 +170,7 @@ const ScheduleScreen = ({ navigation }) => {
       
       <TouchableOpacity 
         style={styles.fabButton}
-        onPress={() => navigation.navigate('Search')}
+        onPress={() => router.push('Search')}
       >
         <Ionicons name="add" size={24} color={colors.background} />
         <Text style={styles.fabText}>Trouver des missions</Text>

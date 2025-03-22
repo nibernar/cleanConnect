@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateBankingInfo, fetchBankingInfo } from '../../redux/actions/userActions';
 import * as Yup from 'yup';
 import { Formik } from 'formik';
+import { router } from 'expo-router'; // Importer router depuis expo-router
 
 const validationSchema = Yup.object().shape({
   accountName: Yup.string().required('Nom du titulaire requis'),
@@ -13,7 +14,7 @@ const validationSchema = Yup.object().shape({
   bankName: Yup.string().required('Nom de la banque requis'),
 });
 
-const BankingInfoScreen = ({ navigation }) => {
+const BankingInfoScreen = () => {
   const dispatch = useDispatch();
   const { user, loading } = useSelector(state => state.auth);
   const [initialValues, setInitialValues] = useState({
@@ -52,7 +53,7 @@ const BankingInfoScreen = ({ navigation }) => {
       Alert.alert(
         'Succès',
         'Vos informations bancaires ont été mises à jour avec succès.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{ text: 'OK', onPress: () => router.back() }] // Remplacer navigation.goBack() par router.back()
       );
     } catch (error) {
       Alert.alert('Erreur', 'Une erreur est survenue lors de la mise à jour de vos informations bancaires.');

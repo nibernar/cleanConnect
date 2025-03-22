@@ -5,11 +5,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { approveApplication, rejectApplication, fetchApplicationDetail } from '../../redux/actions/hostActions';
 import { MaterialIcons } from '@expo/vector-icons';
 import { formatDate } from '../../utils/formatters';
+import { router } from 'expo-router'; // Importer router
 
 // Modifier pour accepter l'applicationId comme prop directe ou via route.params
 const ApplicationDetailScreen = ({ 
   route, 
-  navigation, 
   applicationId: propApplicationId,
   listingId: propListingId,
   onAccept,
@@ -84,7 +84,7 @@ const ApplicationDetailScreen = ({
       Alert.alert(
         'Candidature refusée',
         'Vous avez refusé cette candidature. Le prestataire a été notifié.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (error) {
       Alert.alert('Erreur', "Une erreur s'est produite lors du refus de la candidature");
@@ -113,7 +113,7 @@ const ApplicationDetailScreen = ({
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Identifiant de candidature manquant</Text>
-        <Button mode="contained" onPress={() => navigation.goBack()} style={styles.button}>
+        <Button mode="contained" onPress={() => router.back()} style={styles.button}>
           Retour
         </Button>
       </View>
@@ -132,7 +132,7 @@ const ApplicationDetailScreen = ({
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Impossible de charger les détails de la candidature</Text>
-        <Button mode="contained" onPress={() => navigation.goBack()} style={styles.button}>
+        <Button mode="contained" onPress={() => router.back()} style={styles.button}>
           Retour
         </Button>
       </View>

@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
@@ -26,14 +25,13 @@ import {
 } from '../../redux/slices/bookingsSlice';
 import TaskChecklist from '../../components/cleaner/TaskChecklist';
 import { colors, spacing, typography, shadows } from '../../utils/theme';
+import { router } from 'expo-router'; // Importer router
 
 /**
  * Screen for displaying and checking off cleaning tasks
  */
-const TasksScreen = () => {
+const TasksScreen = ({ route }) => {
   const dispatch = useDispatch();
-  const navigation = useNavigation();
-  const route = useRoute();
   const { bookingId } = route.params;
   const { currentBooking, loading, taskUpdateLoading } = useSelector(state => state.bookings);
   const [tasks, setTasks] = useState([]);
@@ -200,7 +198,7 @@ const TasksScreen = () => {
               [
                 {
                   text: "OK",
-                  onPress: () => navigation.navigate('Schedule')
+                  onPress: () => router.push('Schedule')
                 }
               ]
             );
@@ -294,7 +292,7 @@ const TasksScreen = () => {
       [
         {
           text: "OK",
-          onPress: () => navigation.navigate('Schedule')
+          onPress: () => router.push('Schedule')
         }
       ]
     );
@@ -317,7 +315,7 @@ const TasksScreen = () => {
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>

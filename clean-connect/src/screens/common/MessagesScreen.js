@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getConversations } from '../../redux/slices/messagesSlice';
+import { fetchConversations } from '../../redux/slices/messagesSlice';
 import ConversationItem from '../../components/messaging/ConversationItem';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../utils/colors';
@@ -12,16 +12,16 @@ const MessagesScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    dispatch(getConversations());
+    dispatch(fetchConversations());
   }, [dispatch]);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    dispatch(getConversations()).finally(() => setRefreshing(false));
+    dispatch(fetchConversations()).finally(() => setRefreshing(false));
   };
 
   const handleConversationPress = (conversationId, recipientName) => {
-    navigation.navigate('ChatScreen', { 
+    router.push('ChatScreen', { 
       conversationId, 
       recipientName 
     });
