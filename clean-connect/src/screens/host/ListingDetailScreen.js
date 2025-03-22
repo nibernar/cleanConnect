@@ -10,45 +10,67 @@ import {
   Image,
   Share
 } from 'react-native';
+import { router } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { getListing, deleteListing, updateListing } from '../../redux/slices/listingsSlice';
+import { fetchListingById, deleteListing, updateListing } from '../../redux/slices/listingsSlice';
 import { getListingApplications } from '../../redux/slices/applicationsSlice';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import ApplicationCard from '../../components/host/ApplicationCard';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import colors from '../../utils/colors';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate } from '../../utils/formatters';
 
-const ListingDetailScreen = ({ route, navigation }) => {
-  const { listingId } = route.params;
+// Fix: Updated component to accept listingId both as direct prop and from route.params
+const ListingDetailScreen = ({ 
+  route, 
+  navigation, 
+  listingId: propListingId, // Accept listingId as direct prop
+  onViewApplications,
+  onEditListing,
+  onClaimForm,
+  onPayment
+}) => {
+  // Get listingId from either direct prop or route.params
+  const listingId = propListingId || route?.params?.listingId;
+  
   const dispatch = useDispatch();
   const { currentListing, loading, error } = useSelector(state => state.listings);
   const { applications, loadingApplications } = useSelector(state => state.applications);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    loadListingData();
+    if (listingId) {
+      loadListingData();
+    }
   }, [dispatch, listingId]);
 
   const loadListingData = () => {
-    dispatch(getListing(listingId));
+    if (!listingId) return;
+    dispatch(fetchListingById(listingId));
     dispatch(getListingApplications(listingId));
   };
 
   const handleRefresh = () => {
+    if (!listingId) return;
     setRefreshing(true);
     Promise.all([
-      dispatch(getListing(listingId)),
+      dispatch(fetchListingById(listingId)),
       dispatch(getListingApplications(listingId))
     ]).finally(() => setRefreshing(false));
   };
 
   const handleEdit = () => {
-    navigation.navigate('EditListingScreen', { listing: currentListing });
+    // Use custom handler if provided, otherwise use navigation
+    if (onEditListing) {
+      onEditListing();
+    } else {
+      router.push('EditListingScreen', { listing: currentListing });
+    }
   };
 
   const handleDelete = () => {
+    if (!listingId) return;
     Alert.alert(
       "Supprimer l'annonce",
       "Êtes-vous sûr de vouloir supprimer cette annonce ? Cette action est irréversible.",
@@ -60,7 +82,7 @@ const ListingDetailScreen = ({ route, navigation }) => {
             dispatch(deleteListing(listingId))
               .unwrap()
               .then(() => {
-                navigation.goBack();
+                router.back();
               });
           },
           style: "destructive"
@@ -70,6 +92,7 @@ const ListingDetailScreen = ({ route, navigation }) => {
   };
 
   const handleShare = async () => {
+    if (!listingId || !currentListing) return;
     try {
       const result = await Share.share({
         message: `Découvrez cette annonce de ménage : "${currentListing.title}". Rejoignez CleanConnect pour postuler !`,
@@ -81,6 +104,7 @@ const ListingDetailScreen = ({ route, navigation }) => {
   };
 
   const handleCancelListing = () => {
+    if (!listingId) return;
     Alert.alert(
       "Annuler l'annonce",
       "Êtes-vous sûr de vouloir annuler cette annonce ? Les candidatures en cours seront rejetées.",
@@ -101,11 +125,15 @@ const ListingDetailScreen = ({ route, navigation }) => {
   };
 
   const handleViewAllApplications = () => {
-    navigation.navigate('ApplicationsScreen', { listingId });
+    if (onViewApplications) {
+      onViewApplications();
+    } else {
+      router.push('ApplicationsScreen', { listingId });
+    }
   };
 
   const handleViewApplication = (applicationId) => {
-    navigation.navigate('ApplicationDetailScreen', { applicationId, listingId });
+    router.push('ApplicationDetailScreen', { applicationId, listingId });
   };
 
   const formatCurrency = (amount) => {
@@ -116,7 +144,7 @@ const ListingDetailScreen = ({ route, navigation }) => {
     let statusText, statusColor, statusBgColor;
     
     switch (status) {
-      case 'active':
+      case 'published':
         statusText = 'Active';
         statusColor = colors.success;
         statusBgColor = colors.successLight;
@@ -150,6 +178,22 @@ const ListingDetailScreen = ({ route, navigation }) => {
       </View>
     );
   };
+
+  // If we don't have a listingId, show an error
+  if (!listingId) {
+    return (
+      <View style={styles.centeredContainer}>
+        <Text style={styles.errorMessage}>
+          Identifiant de l'annonce manquant
+        </Text>
+        <Button 
+          title="Retour" 
+          onPress={() => router.back()} 
+          style={styles.retryButton}
+        />
+      </View>
+    );
+  }
 
   if (loading && !currentListing) {
     return (
@@ -196,7 +240,7 @@ const ListingDetailScreen = ({ route, navigation }) => {
           <View style={styles.headerActions}>
             <TouchableOpacity 
               style={styles.headerActionButton}
-              onPress={() => navigation.goBack()}
+              onPress={() => router.back()}
             >
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
@@ -282,16 +326,7 @@ const ListingDetailScreen = ({ route, navigation }) => {
           <View>
             <Text style={styles.priceLabel}>Prix total</Text>
             <Text style={styles.price}>
-              {formatCurrency(currentListing.totalPrice || 0)}
-            </Text>
-          </View>
-          
-          <View style={styles.priceDetails}>
-            <Text style={styles.priceDetail}>
-              Service: {formatCurrency(currentListing.basePrice || 0)}
-            </Text>
-            <Text style={styles.priceDetail}>
-              Frais: {formatCurrency(currentListing.commission || 0)}
+              {formatCurrency(currentListing.price || 0)}
             </Text>
           </View>
         </View>
@@ -361,11 +396,10 @@ const ListingDetailScreen = ({ route, navigation }) => {
         <Card style={styles.applicationsCard}>
           <View style={styles.applicationHeader}>
             <Text style={styles.sectionTitle}>Candidatures</Text>
-            {applications && applications.length > 0 && (
-              <TouchableOpacity onPress={handleViewAllApplications}>
-                <Text style={styles.viewAllText}>Voir tout</Text>
-              </TouchableOpacity>
-            )}
+            {/* MODIFICATION : Afficher toujours le bouton "Voir tout" */}
+            <TouchableOpacity onPress={handleViewAllApplications}>
+              <Text style={styles.viewAllText}>Voir tout</Text>
+            </TouchableOpacity>
           </View>
           
           {loadingApplications ? (
@@ -398,6 +432,12 @@ const ListingDetailScreen = ({ route, navigation }) => {
               <Text style={styles.emptyApplicationsText}>
                 Aucune candidature reçue pour le moment
               </Text>
+              {/* AJOUT : Bouton pour accéder directement à la page des candidatures */}
+              <Button
+                title="Consulter les candidatures"
+                onPress={handleViewAllApplications}
+                style={styles.viewApplicationsButton}
+              />
             </View>
           )}
         </Card>
@@ -625,6 +665,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textLight,
     textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 15,
+  },
+  viewApplicationsButton: {
     marginTop: 10,
   },
   moreApplicationsButton: {

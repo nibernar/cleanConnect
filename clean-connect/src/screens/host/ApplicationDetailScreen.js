@@ -4,16 +4,33 @@ import { Button, Card, Avatar, Divider, Chip } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { approveApplication, rejectApplication, fetchApplicationDetail } from '../../redux/actions/hostActions';
 import { MaterialIcons } from '@expo/vector-icons';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate } from '../../utils/formatters';
 
-const ApplicationDetailScreen = ({ route, navigation }) => {
-  const { applicationId, listingId } = route.params;
+// Modifier pour accepter l'applicationId comme prop directe ou via route.params
+const ApplicationDetailScreen = ({ 
+  route, 
+  navigation, 
+  applicationId: propApplicationId,
+  listingId: propListingId,
+  onAccept,
+  onReject,
+  onMessage
+}) => {
+  // Obtenir les IDs soit depuis les props directes, soit depuis route.params
+  const applicationId = propApplicationId || (route?.params ? route.params.applicationId : undefined);
+  const listingId = propListingId || (route?.params ? route.params.listingId : undefined);
+  
   const dispatch = useDispatch();
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
+    if (!applicationId) {
+      setLoading(false);
+      return;
+    }
+    
     const loadApplicationDetail = async () => {
       try {
         const result = await dispatch(fetchApplicationDetail(applicationId));
@@ -29,13 +46,21 @@ const ApplicationDetailScreen = ({ route, navigation }) => {
   }, [dispatch, applicationId]);
 
   const handleApprove = async () => {
+    if (!applicationId) return;
+    
+    // Si un gestionnaire personnalisé est fourni, l'utiliser
+    if (onAccept) {
+      onAccept(applicationId);
+      return;
+    }
+    
     setProcessing(true);
     try {
       await dispatch(approveApplication(applicationId));
       Alert.alert(
         'Candidature approuvée',
         'Vous avez accepté cette candidature. Le prestataire a été notifié.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Payment', { applicationId, listingId }) }]
+        [{ text: 'OK', onPress: () => router.push('Payment', { applicationId, listingId }) }]
       );
     } catch (error) {
       Alert.alert('Erreur', "Une erreur s'est produite lors de l'approbation de la candidature");
@@ -45,6 +70,14 @@ const ApplicationDetailScreen = ({ route, navigation }) => {
   };
 
   const handleReject = async () => {
+    if (!applicationId) return;
+    
+    // Si un gestionnaire personnalisé est fourni, l'utiliser
+    if (onReject) {
+      onReject(applicationId);
+      return;
+    }
+    
     setProcessing(true);
     try {
       await dispatch(rejectApplication(applicationId));
@@ -61,13 +94,31 @@ const ApplicationDetailScreen = ({ route, navigation }) => {
   };
 
   const handleContactCleaner = () => {
-    if (application && application.cleaner) {
-      navigation.navigate('Chat', {
-        recipientId: application.cleaner.id,
-        name: `${application.cleaner.firstName} ${application.cleaner.lastName}`,
-      });
+    if (!application || !application.cleaner) return;
+    
+    // Si un gestionnaire personnalisé est fourni, l'utiliser
+    if (onMessage) {
+      onMessage(application.cleaner.id);
+      return;
     }
+    
+    router.push('Chat', {
+      recipientId: application.cleaner.id,
+      name: `${application.cleaner.firstName} ${application.cleaner.lastName}`,
+    });
   };
+
+  // Si l'applicationId est manquant, afficher un message d'erreur
+  if (!applicationId) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Identifiant de candidature manquant</Text>
+        <Button mode="contained" onPress={() => navigation.goBack()} style={styles.button}>
+          Retour
+        </Button>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -239,7 +290,7 @@ const ApplicationDetailScreen = ({ route, navigation }) => {
           {application.status === 'approved' && (
             <Button
               mode="contained"
-              onPress={() => navigation.navigate('Payment', { applicationId, listingId })}
+              onPress={() => router.push('Payment', { applicationId, listingId })}
               style={styles.paymentButton}
               icon="credit-card"
             >

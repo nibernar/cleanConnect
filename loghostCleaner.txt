@@ -1,0 +1,152 @@
+[AuthAction] RegisterHost action appelée avec: {firstName: 'kk', lastName: 'kk', email: 'kk@hotmail.fr', phone: '0569049567', password: 'ggwp31320', …}
+Registering host with data: {firstName: 'kk', lastName: 'kk', email: 'kk@hotmail.fr', phone: '0569049567', password: 'ggwp31320', …}
+[Layout/Main] État principal: {isAuthenticated: false, userType: undefined, loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Aucun utilisateur fourni
+[Layout] caaaca undefined dans register,host
+[Layout/Main] Rendu du slot principal
+API Request: POST /auth/register/host
+API Request Headers: AxiosHeaders {Accept: 'application/json', Content-Type: 'application/json'}
+[AuthAction] RegisterHost réponse: {success: true, token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Z…jEwfQ.JBwxnfKh4bxX2Z9w6usVL6v_OlEM4sZrQs_6fw7gjGU', user: {…}}
+Auth token set globally
+🔄 Synchronizing user data from auth: {id: '67ddab82ad36e217932ade0c', firstName: 'kk', lastName: 'kk', email: 'kk@hotmail.fr', role: 'host', …}
+[Layout/Main] État principal: {isAuthenticated: false, userType: undefined, loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Aucun utilisateur fourni
+[Layout] caaaca undefined dans host,dashboard
+[Layout/Main] Rendu du slot principal
+[DEBUG] HostDashboard - Tentative de détermination du type utilisateur
+[DEBUG] HostDashboard - Aucun utilisateur fourni
+[DEBUG] HostDashboard - Tentative de détermination du type utilisateur
+[DEBUG] HostDashboard - Aucun utilisateur fourni
+[HostDashboard] Vérification du type utilisateur: undefined
+[HostDashboard] Utilisateur non authentifié, redirection vers login
+[Layout] Analyse de route: {segments: Array(2), firstSegment: 'host', isAuthenticated: false, userType: undefined, userId: undefined, …}
+[Layout] Non authentifié, redirection vers login
+[LoginScreen] Vérification état authentification: {isAuthenticated: false, userId: undefined}
+[Layout/Main] État principal: {isAuthenticated: false, userType: undefined, loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Aucun utilisateur fourni
+[Layout] caaaca undefined dans (auth)
+[Layout/Main] Rendu du slot principal
+[Layout] Analyse de route: {segments: Array(1), firstSegment: '(auth)', isAuthenticated: false, userType: undefined, userId: undefined, …}
+[Layout] Non authentifié, redirection vers login
+[LoginScreen] Vérification état authentification: {isAuthenticated: false, userId: undefined}
+[SyncMiddleware] Action détectée: auth/registerHost/fulfilled, synchronisation des états...
+[SyncMiddleware] Données utilisateur extraites de auth action: ID: 67ddab82ad36e217932ade0c, Type: host
+🔄 Synchronizing user data from auth: {id: '67ddab82ad36e217932ade0c', firstName: 'kk', lastName: 'kk', email: 'kk@hotmail.fr', role: 'host', …}
+[Layout/Main] État principal: {isAuthenticated: true, userType: 'host', loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Type trouvé dans user: host
+[Layout] caaaca host dans (auth)
+[Layout/Main] Rendu du slot principal
+[LoginScreen] Vérification état authentification: {isAuthenticated: true, userId: '67ddab82ad36e217932ade0c'}
+[LoginScreen] Utilisateur déjà authentifié, redirection
+[RoutingService] Redirection basée sur auth: {isAuthenticated: true, userID: '67ddab82ad36e217932ade0c'}
+[DEBUG] routingService - Tentative de détermination du type utilisateur
+[DEBUG] routingService - Type trouvé dans user: host
+[RoutingService] Redirection vers dashboard: {userType: 'host'}
+[RoutingService] Redirection vers dashboard host
+ [Layout] Analyse de route: {segments: Array(1), firstSegment: '(auth)', isAuthenticated: true, userType: 'host', userId: '67ddab82ad36e217932ade0c', …}
+ [Layout] Utilisateur authentifié dans groupe auth, redirection
+ [Layout/Main] État principal: {isAuthenticated: true, userType: 'host', loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Type trouvé dans user: host
+ [Layout] caaaca host dans (host),dashboard
+ [Layout/Main] Rendu du slot principal
+[Layout children]: Too many screens defined. Route "payment" is extraneous.
+
+ 🔍 API call for user
+[Layout] Analyse de route: {segments: Array(2), firstSegment: '(host)', isAuthenticated: true, userType: 'host', userId: '67ddab82ad36e217932ade0c', …}
+[Layout/Main] État principal: {isAuthenticated: true, userType: 'host', loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Type trouvé dans user: host
+[Layout] caaaca host dans (host),dashboard
+[Layout/Main] Rendu du slot principal
+API Request: GET /hosts/me/active-listings?limit=5
+API Request Headers: AxiosHeaders {Accept: 'application/json', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZC…jEwfQ.JBwxnfKh4bxX2Z9w6usVL6v_OlEM4sZrQs_6fw7gjGU'}
+API Request: GET /notifications/unread-count
+API Request Headers: AxiosHeaders {Accept: 'application/json', Content-Type: 'application/json', Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZC…jEwfQ.JBwxnfKh4bxX2Z9w6usVL6v_OlEM4sZrQs_6fw7gjGU'}
+[Layout/Main] État principal: {isAuthenticated: true, userType: 'host', loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Type trouvé dans user: host
+[Layout] caaaca host dans (host),dashboard
+[Layout/Main] Rendu du slot principal
+[Layout/Main] État principal: {isAuthenticated: true, userType: 'host', loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Type trouvé dans user: host
+[Layout] caaaca host dans (host),dashboard
+
+
+
+
+
+
+
+
+
+
+
+[AuthAction] RegisterCleaner action appelée avec: {firstName: 'xx', lastName: 'xx', email: 'xx@hotmail.fr', phone: '0593485464', password: 'ggwp31320', …}
+Registering cleaner with data: {firstName: 'xx', lastName: 'xx', email: 'xx@hotmail.fr', phone: '0593485464', password: 'ggwp31320', …}
+[Layout/Main] État principal: {isAuthenticated: false, userType: undefined, loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Aucun utilisateur fourni
+[Layout] caaaca undefined dans register,cleaner
+[Layout/Main] Rendu du slot principal
+API Request: POST /auth/register/cleaner
+API Request Headers: AxiosHeaders {Accept: 'application/json', Content-Type: 'application/json'}
+[AuthAction] RegisterCleaner réponse: {success: true, token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Z…zQ5fQ.RzJHu4h5zNPwHhdsaIkrCBFIDD0gM8-1FDUXzNWrRYA', user: {…}}
+Auth token set globally
+🔄 Synchronizing user data from auth: {id: '67ddae65ad36e217932ade1a', firstName: 'xx', lastName: 'xx', email: 'xx@hotmail.fr', role: 'cleaner', …}
+[Layout/Main] État principal: {isAuthenticated: false, userType: undefined, loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Aucun utilisateur fourni
+[Layout] caaaca undefined dans cleaner,dashboard
+[Layout/Main] Rendu du slot principal
+[DEBUG] CleanerDashboard - Tentative de détermination du type utilisateur
+[DEBUG] CleanerDashboard - Aucun utilisateur fourni
+[DEBUG] CleanerDashboard - Tentative de détermination du type utilisateur
+[DEBUG] CleanerDashboard - Aucun utilisateur fourni
+[CleanerDashboard] Vérification du type utilisateur: undefined
+[CleanerDashboard] Utilisateur non authentifié, redirection vers login
+[Layout] Analyse de route: {segments: Array(2), firstSegment: 'cleaner', isAuthenticated: false, userType: undefined, userId: undefined, …}
+[Layout] Non authentifié, redirection vers login
+[LoginScreen] Vérification état authentification: {isAuthenticated: false, userId: undefined}
+[Layout/Main] État principal: {isAuthenticated: false, userType: undefined, loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Aucun utilisateur fourni
+[Layout] caaaca undefined dans (auth)
+[Layout/Main] Rendu du slot principal
+[Layout] Analyse de route: {segments: Array(1), firstSegment: '(auth)', isAuthenticated: false, userType: undefined, userId: undefined, …}
+[Layout] Non authentifié, redirection vers login
+[LoginScreen] Vérification état authentification: {isAuthenticated: false, userId: undefined}
+[SyncMiddleware] Action détectée: auth/registerCleaner/fulfilled, synchronisation des états...
+[SyncMiddleware] Données utilisateur extraites de auth action: ID: 67ddae65ad36e217932ade1a, Type: cleaner
+🔄 Synchronizing user data from auth: {id: '67ddae65ad36e217932ade1a', firstName: 'xx', lastName: 'xx', email: 'xx@hotmail.fr', role: 'cleaner', …}
+[Layout/Main] État principal: {isAuthenticated: true, userType: 'cleaner', loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Type trouvé dans user: cleaner
+[Layout] caaaca cleaner dans (auth)
+[Layout/Main] Rendu du slot principal
+[LoginScreen] Vérification état authentification: {isAuthenticated: true, userId: '67ddae65ad36e217932ade1a'}
+[LoginScreen] Utilisateur déjà authentifié, redirection
+[RoutingService] Redirection basée sur auth: {isAuthenticated: true, userID: '67ddae65ad36e217932ade1a'}
+Store not initialized. Make sure to call initializeStore first.
+[DEBUG] routingService - Tentative de détermination du type utilisateur
+[DEBUG] routingService - Type trouvé dans user: cleaner
+[RoutingService] Redirection vers dashboard: {userType: 'cleaner'}
+[RoutingService] Redirection vers dashboard cleaner
+[Layout] Analyse de route: {segments: Array(1), firstSegment: '(auth)', isAuthenticated: true, userType: 'cleaner', userId: '67ddae65ad36e217932ade1a', …}
+[Layout] Utilisateur authentifié dans groupe auth, redirection
+[Layout/Main] État principal: {isAuthenticated: true, userType: 'cleaner', loading: undefined}
+[DEBUG] _layout.tsx/useProtectedRoute - Tentative de détermination du type utilisateur
+[DEBUG] _layout.tsx/useProtectedRoute - Type trouvé dans user: cleaner
+
+
+[Layout] caaaca cleaner dans (host),dashboard
+[Layout/Main] Rendu du slot principal
+[Layout children]: Too many screens defined. Route "payment" is extraneous.
+[Layout children]: Too many screens defined. Route "payment" is extraneous.
+⛔ Not retrying due to client error (403)
+All 2 retry attempts failed

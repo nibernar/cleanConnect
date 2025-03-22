@@ -6,68 +6,189 @@ import {
   ScrollView, 
   TouchableOpacity, 
   RefreshControl,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
+import { router } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { getHostStats, getActiveListings } from '../../redux/slices/hostSlice';
+import { getHostStats, getActiveListings, clearErrors } from '../../redux/slices/hostSlice';
 import { getUnreadNotificationsCount } from '../../redux/slices/notificationsSlice';
 import Card from '../../components/common/Card';
 import ListingCard from '../../components/host/ListingCard';
+import ApiErrorDisplay from '../../components/common/ApiErrorDisplay';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../utils/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../../services/api';
+import { checkAuthToken } from '../../utils/apiDebugUtils';
+import { formatCurrency, formatDate, formatTimeRange } from '../../utils/formatters';
 
-const DashboardScreen = ({ navigation }) => {
+const DashboardScreen = () => {
   const dispatch = useDispatch();
-  const { user } = useSelector(state => state.user);
-  const { stats, activeListings, loading } = useSelector(state => state.host);
+  
+  // Utiliser à la fois auth.user et user.user pour garantir la compatibilité
+  const authUser = useSelector(state => state.auth.user);
+  const userFromUserState = useSelector(state => state.user.user);
+  const authToken = useSelector(state => state.auth.token);
+  
+  // Préférer user.user car il est synchronisé avec auth.user mais peut contenir plus de données
+  const user = userFromUserState || authUser;
+  
+  const { stats, activeListings, loading, error } = useSelector(state => state.host);
   const { unreadCount } = useSelector(state => state.notifications);
   const [refreshing, setRefreshing] = useState(false);
+  const [authCheckComplete, setAuthCheckComplete] = useState(false);
+
+  // Limit the number of listings to display on dashboard
+  const DASHBOARD_LISTINGS_LIMIT = 5;
+
+  // Fonction pour vérifier l'état de l'authentification
+  const checkAuthStatus = async () => {
+    try {
+      const token = await checkAuthToken();
+      
+      // Définir manuellement le token dans l'API si présent
+      if (token) {
+        api.setAuthToken(token);
+      }
+      
+      setAuthCheckComplete(true);
+      return token;
+    } catch (error) {
+      setAuthCheckComplete(true);
+      return false;
+    }
+  };
 
   useEffect(() => {
-    loadDashboardData();
+    // Clear any previous errors
+    dispatch(clearErrors());
+    
+    // Vérifier l'état de l'authentification avant de charger les données
+    checkAuthStatus().then(isAuthenticated => {
+      if (isAuthenticated) {
+        loadDashboardData();
+      } else {
+        // Pour éviter de bloquer l'utilisateur, on charge quand même les données
+        // Les slices Redux utiliseront les endpoints de debug en cas d'erreur d'auth
+        loadDashboardData();
+      }
+    });
   }, [dispatch]);
 
   const loadDashboardData = () => {
     dispatch(getHostStats());
-    dispatch(getActiveListings());
+    dispatch(getActiveListings(DASHBOARD_LISTINGS_LIMIT));
     dispatch(getUnreadNotificationsCount());
   };
 
   const onRefresh = () => {
     setRefreshing(true);
-    Promise.all([
-      dispatch(getHostStats()),
-      dispatch(getActiveListings()),
-      dispatch(getUnreadNotificationsCount())
-    ]).finally(() => setRefreshing(false));
+    dispatch(clearErrors());
+    
+    // Vérifier l'authentification à nouveau sur le rafraîchissement
+    checkAuthStatus().then(isAuthenticated => {
+      Promise.all([
+        dispatch(getHostStats()),
+        dispatch(getActiveListings(DASHBOARD_LISTINGS_LIMIT)),
+        dispatch(getUnreadNotificationsCount())
+      ]).finally(() => {
+        setRefreshing(false);
+      });
+    });
   };
 
   const navigateToCreateListing = () => {
-    navigation.navigate('CreateListingScreen');
+    router.push('/(host)/dashboard/create-listing');
   };
 
   const navigateToListings = () => {
-    navigation.navigate('ListingsScreen');
+    router.push('/(host)/listings');
   };
 
   const navigateToApplications = () => {
-    navigation.navigate('ApplicationsScreen');
+    router.push('/(host)/listings/applications');
   };
 
   const navigateToNotifications = () => {
-    navigation.navigate('NotificationsScreen');
+    router.push('/(host)/notifications');
   };
 
   const navigateToMessages = () => {
-    navigation.navigate('MessagesScreen');
+    router.push('/(host)/messages');
   };
 
   const navigateToListingDetail = (listingId) => {
-    navigation.navigate('ListingDetailScreen', { listingId });
+    router.push(`/(host)/listings/${listingId}`);
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+  const renderActiveListings = () => {
+    // Show loading indicator if we're loading and not refreshing
+    if (loading && !refreshing && !error) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      );
+    }
+
+    // Show error if we have one
+    if (error && !refreshing) {
+      return (
+        <ApiErrorDisplay 
+          error={error} 
+          onRetry={() => {
+            dispatch(clearErrors());
+            checkAuthStatus().then(() => loadDashboardData());
+          }}
+          message="Impossible de charger les annonces actives"
+        />
+      );
+    }
+
+    // If no listings available, show empty state
+    if (Array.isArray(activeListings) && activeListings.length === 0) {
+      return (
+        <Card style={styles.emptyCard}>
+          <View style={styles.emptyContent}>
+            <Ionicons name="document-outline" size={50} color={colors.textLight} />
+            <Text style={styles.emptyText}>Vous n'avez pas d'annonces actives</Text>
+            <TouchableOpacity 
+              style={styles.createButton}
+              onPress={navigateToCreateListing}
+            >
+              <Text style={styles.createButtonText}>Créer une annonce</Text>
+            </TouchableOpacity>
+          </View>
+        </Card>
+      );
+    }
+
+    // Otherwise, show the list of listings
+    return (
+      <ScrollView 
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.listingsContainer}
+      >
+        {Array.isArray(activeListings) && activeListings.map(listing => (
+          <ListingCard 
+            key={listing._id || `listing-${Math.random()}`}
+            listing={listing}
+            onPress={() => navigateToListingDetail(listing._id)}
+            style={styles.listingCard}
+          />
+        ))}
+        
+        <TouchableOpacity 
+          style={styles.addListingCard}
+          onPress={navigateToCreateListing}
+        >
+          <Ionicons name="add-circle" size={40} color={colors.primary} />
+          <Text style={styles.addListingText}>Ajouter une annonce</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
   };
 
   return (
@@ -144,7 +265,7 @@ const DashboardScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {loading && !refreshing ? (
+      {loading && !refreshing && !error ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -200,43 +321,7 @@ const DashboardScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
             
-            {activeListings.length === 0 ? (
-              <Card style={styles.emptyCard}>
-                <View style={styles.emptyContent}>
-                  <Ionicons name="document-outline" size={50} color={colors.textLight} />
-                  <Text style={styles.emptyText}>Vous n'avez pas d'annonces actives</Text>
-                  <TouchableOpacity 
-                    style={styles.createButton}
-                    onPress={navigateToCreateListing}
-                  >
-                    <Text style={styles.createButtonText}>Créer une annonce</Text>
-                  </TouchableOpacity>
-                </View>
-              </Card>
-            ) : (
-              <ScrollView 
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.listingsContainer}
-              >
-                {activeListings.map(listing => (
-                  <ListingCard 
-                    key={listing._id}
-                    listing={listing}
-                    onPress={() => navigateToListingDetail(listing._id)}
-                    style={styles.listingCard}
-                  />
-                ))}
-                
-                <TouchableOpacity 
-                  style={styles.addListingCard}
-                  onPress={navigateToCreateListing}
-                >
-                  <Ionicons name="add-circle" size={40} color={colors.primary} />
-                  <Text style={styles.addListingText}>Ajouter une annonce</Text>
-                </TouchableOpacity>
-              </ScrollView>
-            )}
+            {renderActiveListings()}
           </View>
 
           <View style={styles.section}>
@@ -244,7 +329,7 @@ const DashboardScreen = ({ navigation }) => {
               <Text style={styles.sectionTitle}>Prochains services</Text>
             </View>
             
-            {stats?.upcomingBookings?.length === 0 ? (
+            {!Array.isArray(stats?.upcomingBookings) || stats?.upcomingBookings?.length === 0 ? (
               <Card style={styles.emptyCard}>
                 <View style={styles.emptyContent}>
                   <Ionicons name="calendar-outline" size={50} color={colors.textLight} />
@@ -252,7 +337,7 @@ const DashboardScreen = ({ navigation }) => {
                 </View>
               </Card>
             ) : (
-              stats?.upcomingBookings?.map(booking => (
+              Array.isArray(stats?.upcomingBookings) && stats?.upcomingBookings.map(booking => (
                 <Card key={booking._id} style={styles.bookingCard}>
                   <View style={styles.bookingHeader}>
                     <Text style={styles.bookingTitle}>{booking.listing.title}</Text>
@@ -263,18 +348,14 @@ const DashboardScreen = ({ navigation }) => {
                     <View style={styles.bookingDetail}>
                       <Ionicons name="calendar-outline" size={18} color={colors.textLight} />
                       <Text style={styles.bookingText}>
-                        {new Date(booking.date).toLocaleDateString('fr-FR', { 
-                          day: '2-digit', 
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
+                        {formatDate(booking)}
                       </Text>
                     </View>
                     
                     <View style={styles.bookingDetail}>
                       <Ionicons name="time-outline" size={18} color={colors.textLight} />
                       <Text style={styles.bookingText}>
-                        {booking.startTime} - {booking.endTime}
+                        {formatTimeRange(booking)}
                       </Text>
                     </View>
                     
@@ -288,7 +369,7 @@ const DashboardScreen = ({ navigation }) => {
                   
                   <TouchableOpacity
                     style={styles.viewDetailsButton}
-                    onPress={() => navigation.navigate('BookingDetailScreen', { bookingId: booking._id })}
+                    onPress={() => router.push(`/(host)/bookings/${booking._id}`)}
                   >
                     <Text style={styles.viewDetailsText}>Voir détails</Text>
                     <Ionicons name="chevron-forward" size={16} color={colors.primary} />
@@ -517,7 +598,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '500',
     marginRight: 5,
-  },
+  }
 });
 
 export default DashboardScreen;

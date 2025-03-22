@@ -217,7 +217,7 @@ describe('Auth Middleware Tests', () => {
 
     it('should return 403 if user does not have authorized role', () => {
       // Create middleware function for specific roles
-      const middleware = authorize('host', 'admin');
+      const middleware = authorize('host', 'admin', 'cleaner');
 
       // Mock request with user having unauthorized role
       const req = {

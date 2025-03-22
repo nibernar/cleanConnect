@@ -31,6 +31,8 @@ function useProtectedRoute() {
   // Déterminer le type d'utilisateur de façon intelligente
   const userType = determineUserType(user, state, '_layout.tsx/useProtectedRoute');
   
+  console.log(`[Layout] caaaca ${userType} dans ${segments}`)
+
   // Premier effet: initialiser la navigation quand tous les composants sont montés
   useEffect(() => {
     if (!navigationInitialized.current) {

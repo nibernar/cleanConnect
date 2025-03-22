@@ -9,14 +9,19 @@ import {
   Alert
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getListings, deleteListing } from '../../redux/slices/listingsSlice';
+import { fetchMyListings, deleteListing } from '../../redux/slices/listingsSlice';
 import ListingCard from '../../components/host/ListingCard';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../utils/colors';
 
-const ListingsScreen = ({ navigation }) => {
+const ListingsScreen = ({ 
+  navigation, 
+  onListingPress, 
+  onViewApplications,
+  onCreateListing 
+}) => {
   const dispatch = useDispatch();
-  const { listings, loading, error } = useSelector(state => state.listings);
+  const { myListings: listings, loading, error } = useSelector(state => state.listings);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all', 'active', 'completed'
 
@@ -25,23 +30,49 @@ const ListingsScreen = ({ navigation }) => {
   }, [dispatch]);
 
   const loadListings = () => {
-    dispatch(getListings());
+    dispatch(fetchMyListings());
   };
 
   const handleRefresh = () => {
     setRefreshing(true);
-    dispatch(getListings()).finally(() => setRefreshing(false));
+    dispatch(fetchMyListings()).finally(() => setRefreshing(false));
   };
 
   const handleCreateListing = () => {
-    navigation.navigate('CreateListingScreen');
+    if (onCreateListing) {
+      onCreateListing();
+    } else if (navigation) {
+      router.push('CreateListingScreen');
+    }
   };
 
   const handleListingPress = (listingId) => {
-    navigation.navigate('ListingDetailScreen', { listingId });
+    if (onListingPress) {
+      onListingPress(listingId);
+    } else if (navigation) {
+      router.push('ListingDetailScreen', { listingId });
+    }
+  };
+
+  const handleViewApplications = (listingId) => {
+    if (onViewApplications) {
+      onViewApplications(listingId);
+    } else if (navigation) {
+      router.push('ApplicationsScreen', { listingId });
+    }
   };
 
   const handleDeleteListing = (listingId) => {
+    // Vérifier que l'ID est défini avant de tenter la suppression
+    if (!listingId) {
+      Alert.alert(
+        "Erreur",
+        "Impossible de supprimer cette annonce : identifiant manquant.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     Alert.alert(
       "Supprimer l'annonce",
       "Êtes-vous sûr de vouloir supprimer cette annonce ?",
@@ -59,6 +90,8 @@ const ListingsScreen = ({ navigation }) => {
   };
 
   const filteredListings = () => {
+    if (!listings) return [];
+    
     switch (filter) {
       case 'active':
         return listings.filter(listing => 
@@ -87,17 +120,23 @@ const ListingsScreen = ({ navigation }) => {
     </View>
   );
 
-  const renderListingItem = ({ item }) => (
-    <ListingCard 
-      listing={item}
-      onPress={() => handleListingPress(item._id)}
-      onDelete={() => handleDeleteListing(item._id)}
-      showActions
-      style={styles.listingCard}
-    />
-  );
+  const renderListingItem = ({ item, index }) => {
+    // S'assurer que l'élément a une ID valide
+    const itemId = item.id || item._id;
+    
+    return (
+      <ListingCard 
+        listing={item}
+        onPress={() => handleListingPress(itemId)}
+        onDelete={() => handleDeleteListing(itemId)}
+        onViewApplications={() => handleViewApplications(itemId)}
+        showActions
+        style={styles.listingCard}
+      />
+    );
+  };
 
-  if (loading && !refreshing && listings.length === 0) {
+  if (loading && !refreshing && (!listings || listings.length === 0)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -182,7 +221,14 @@ const ListingsScreen = ({ navigation }) => {
 
       <FlatList
         data={filteredListings()}
-        keyExtractor={item => item._id}
+        // Assurer des clés uniques pour la VirtualizedList
+        keyExtractor={(item, index) => {
+          // Utiliser l'ID de l'item s'il existe
+          if (item.id) return `listing-${item.id}`;
+          if (item._id) return `listing-${item._id}`;
+          // Fallback à un identifiant basé sur l'index en dernier recours
+          return `listing-${index}-${Date.now()}`;
+        }}
         renderItem={renderListingItem}
         refreshing={refreshing}
         onRefresh={handleRefresh}

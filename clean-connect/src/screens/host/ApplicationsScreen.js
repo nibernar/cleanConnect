@@ -6,7 +6,8 @@ import {
   Text, 
   TouchableOpacity, 
   ActivityIndicator,
-  Alert
+  Alert,
+  Image
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
@@ -24,8 +25,17 @@ import Rating from '../../components/common/Rating';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../utils/colors';
 
-const ApplicationsScreen = ({ route, navigation }) => {
-  const { listingId } = route.params || {};
+// Modifier le composant pour accepter listingId en tant que prop directe
+const ApplicationsScreen = ({ 
+  route, 
+  navigation, 
+  listingId: propListingId, // Accepter listingId comme prop directe
+  onApplicationPress,
+  showAllApplications
+}) => {
+  // Obtenir listingId soit depuis la prop directe, soit depuis route.params
+  const listingId = propListingId || (route?.params ? route.params.listingId : undefined);
+  
   const dispatch = useDispatch();
   const { applications, currentApplication, loading, error } = useSelector(state => state.applications);
   const { currentListing } = useSelector(state => state.listings);
@@ -55,6 +65,11 @@ const ApplicationsScreen = ({ route, navigation }) => {
   };
 
   const handleApplicationPress = (applicationId) => {
+    if (onApplicationPress) {
+      onApplicationPress(applicationId);
+      return;
+    }
+    
     dispatch(getApplicationById(applicationId))
       .unwrap()
       .then(() => {
@@ -119,17 +134,18 @@ const ApplicationsScreen = ({ route, navigation }) => {
   };
 
   const filteredApplications = () => {
-    if (!applications) return [];
+    // S'assurer que applications est un tableau avant d'appeler filter()
+    const applicationsArray = Array.isArray(applications) ? applications : [];
     
     switch (filter) {
       case 'pending':
-        return applications.filter(app => app.status === 'pending');
+        return applicationsArray.filter(app => app.status === 'pending');
       case 'accepted':
-        return applications.filter(app => app.status === 'accepted');
+        return applicationsArray.filter(app => app.status === 'accepted');
       case 'rejected':
-        return applications.filter(app => app.status === 'rejected');
+        return applicationsArray.filter(app => app.status === 'rejected');
       default:
-        return applications;
+        return applicationsArray;
     }
   };
 
