@@ -120,8 +120,8 @@ const DashboardScreen = () => {
   
   const navigateToListingDetail = (listingId) => {
     router.push({
-      pathname: '/(cleaner)/listings/[id]',
-      params: { id: listingId }
+      pathname: `/(cleaner)/listings/${listingId}`,
+      // Aucun besoin de params ici car l'ID est déjà dans le chemin
     });
   };
 

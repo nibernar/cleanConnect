@@ -7,8 +7,7 @@ export default function ListingDetail() {
   const { id } = useLocalSearchParams();
   
   const handleViewApplications = () => {
-    // Correction du chemin pour accéder aux candidatures
-    router.push(`/(host)/listings/applications?listingId=${id}`);
+    router.push(`/(host)/listings/${id}/applications`);
   };
   
   const handleEditListing = () => {
@@ -16,11 +15,11 @@ export default function ListingDetail() {
   };
   
   const handleClaimForm = () => {
-    router.push(`/(host)/listings/[id]/claim?id=${id}`);
+    router.push(`/(host)/listings/${id}/claim`);
   };
   
   const handlePayment = () => {
-    router.push(`/(host)/listings/[id]/payment?id=${id}`);
+    router.push(`/(host)/listings/${id}/payment`);
   };
   
   return (

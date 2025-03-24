@@ -45,7 +45,7 @@ export default function ListingsLayout() {
         }} 
       />
       <Stack.Screen 
-        name="applications/index"
+        name="applications"  // Changé de "applications/index"
         options={{ 
           title: 'Candidatures',
         }} 

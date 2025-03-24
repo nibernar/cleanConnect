@@ -20,7 +20,6 @@ const authService = {
    * @returns {Promise<Object>} New user data and token
    */
   registerHost: async (userData) => {
-    console.log('Registering host with data:', userData);
     return await apiService.post('/auth/register/host', userData);
   },
 
@@ -30,7 +29,6 @@ const authService = {
    * @returns {Promise<Object>} New user data and token
    */
   registerCleaner: async (userData) => {
-    console.log('Registering cleaner with data:', userData);
     return await apiService.post('/auth/register/cleaner', userData);
   },
 
@@ -39,15 +37,7 @@ const authService = {
    * @returns {Promise<Object>} User data
    */
   getCurrentUser: async () => {
-    console.log('Appel de getCurrentUser via API');
-    try {
-      const userData = await apiService.get('/auth/me');
-      console.log('Données utilisateur récupérées avec succès:', userData);
-      return userData;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des données utilisateur:', error);
-      throw error;
-    }
+    return await apiService.get('/auth/me');
   },
 
   /**
@@ -65,7 +55,7 @@ const authService = {
    * @returns {Promise<Object>} Request result
    */
   requestPasswordReset: async (email) => {
-    return await apiService.post('/auth/forgotpassword', { email });
+    return await apiService.post('/auth/forgot-password', { email });
   },
 
   /**
@@ -75,7 +65,7 @@ const authService = {
    * @returns {Promise<Object>} Reset result
    */
   resetPassword: async (token, newPassword) => {
-    return await apiService.post(`/auth/resetpassword/${token}`, {
+    return await apiService.post(`/auth/reset-password/${token}`, {
       password: newPassword
     });
   },

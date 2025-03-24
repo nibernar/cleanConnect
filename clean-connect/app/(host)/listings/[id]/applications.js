@@ -1,9 +1,10 @@
 import React from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import ApplicationsScreen from '../../../../src/screens/host/ApplicationsScreen';
 
-export default function AllApplications() {
+export default function ListingApplications() {
   const router = useRouter();
+  const { id } = useLocalSearchParams();
   
   const handleApplicationPress = (applicationId) => {
     router.push(`/(host)/listings/applications/${applicationId}`);
@@ -11,9 +12,8 @@ export default function AllApplications() {
   
   return (
     <ApplicationsScreen 
-      // Aucun ID de listing spécifique car c'est la vue de toutes les candidatures
+      listingId={id}
       onApplicationPress={handleApplicationPress}
-      showAllApplications
     />
   );
 }

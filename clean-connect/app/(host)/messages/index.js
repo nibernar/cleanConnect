@@ -7,8 +7,8 @@ export default function Messages() {
   
   const handleConversationPress = (userId, name) => {
     router.push({
-      pathname: '/(host)/messages/[id]',
-      params: { id: userId, name }
+      pathname: `/(host)/messages/${userId}`,
+      params: { name }
     });
   };
   

@@ -10,7 +10,7 @@ export default function Notifications() {
     if (notification.type === 'application') {
       router.push(`/(host)/listings/applications/${notification.applicationId}`);
     } else if (notification.type === 'listing') {
-      router.push(`/(host)/listings/[id]?id=${notification.listingId}`);
+      router.push(`/(host)/listings/${notification.listingId}`);
     } else if (notification.type === 'message') {
       router.push(`/(host)/messages/${notification.userId}`);
     }

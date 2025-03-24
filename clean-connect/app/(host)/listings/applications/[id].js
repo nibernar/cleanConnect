@@ -17,7 +17,7 @@ export default function ApplicationDetail() {
       
       // Si listingId est présent, naviguer vers le paiement
       if (listingId) {
-        router.push(`/(host)/listings/[id]/payment?id=${listingId}&applicationId=${id}`);
+        router.push(`/(host)/listings/${listingId}/payment?applicationId=${id}`);
       } else {
         // Sinon, revenir simplement en arrière
         router.back();

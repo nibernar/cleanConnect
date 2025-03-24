@@ -44,6 +44,7 @@ export const fetchMyListings = createAsyncThunk(
   async (_, { rejectWithValue, dispatch }) => {
     try {
       const response = await listingService.getMyListings();
+      console.log('API response structure:', response);
       return response;
     } catch (error) {
       const errorMessage = handleListingError(error, dispatch, ERROR_ACTIONS.FETCH_ERROR);
@@ -221,12 +222,35 @@ const listingsSlice = createSlice({
       })
       .addCase(fetchMyListings.fulfilled, (state, action) => {
         state.loading = false;
-        state.listings = action.payload.listings.map(transformListingToFrontend);
-        state.pagination = {
-          total: action.payload.total,
-          page: action.payload.page,
-          limit: action.payload.limit
-        };
+        
+        // Vérifier si action.payload est un tableau (ce qui est le cas ici)
+        if (Array.isArray(action.payload)) {
+          state.listings = action.payload.map(transformListingToFrontend);
+          state.pagination = {
+            total: action.payload.length,
+            page: 1,
+            limit: action.payload.length
+          };
+        } 
+        // Garder la structure existante pour la compatibilité
+        else if (action.payload && action.payload.listings) {
+          state.listings = action.payload.listings.map(transformListingToFrontend);
+          state.pagination = {
+            total: action.payload.total,
+            page: action.payload.page,
+            limit: action.payload.limit
+          };
+        }
+        // Cas d'erreur
+        else {
+          state.listings = [];
+          state.pagination = {
+            total: 0,
+            page: 1,
+            limit: 10
+          };
+          console.error('Format de réponse API inattendu:', action.payload);
+        }
       })
       .addCase(fetchMyListings.rejected, (state, action) => {
         state.loading = false;

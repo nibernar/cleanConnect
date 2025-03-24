@@ -65,10 +65,8 @@ const CreateListingScreen = ({ onListingCreated, onCancel }) => {
                 onListingCreated(listing);
               } else {
                 const listingId = listing._id || listing.id;
-                router.push({
-                  pathname: '/(host)/listings/[id]',
-                  params: { id: listingId }
-                });
+                // Utiliser une navigation directe avec l'ID
+                router.push(`/(host)/listings/${listingId}`);
               }
             } 
           }]

@@ -146,10 +146,13 @@ const messagesSlice = createSlice({
       })
       .addCase(fetchConversations.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.conversations = action.payload;
         
-        // Calculate total unread count
-        state.unreadCount = action.payload.reduce((count, conversation) => {
+        // Extraire le tableau de conversations de la réponse
+        const conversations = action.payload.data || [];
+        state.conversations = conversations;
+        
+        // Calculer le nombre total de messages non lus
+        state.unreadCount = conversations.reduce((count, conversation) => {
           return count + (conversation.unreadCount || 0);
         }, 0);
       })
