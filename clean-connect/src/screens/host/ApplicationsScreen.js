@@ -16,7 +16,7 @@ import {
   acceptApplication, 
   rejectApplication 
 } from '../../redux/slices/applicationsSlice';
-import { getListing } from '../../redux/slices/listingsSlice';
+import { fetchListingById } from '../../redux/slices/listingsSlice';
 import ApplicationCard from '../../components/host/ApplicationCard';
 import PaymentForm from '../../components/host/PaymentForm';
 import Card from '../../components/common/Card';
@@ -52,7 +52,7 @@ const ApplicationsScreen = ({
   const loadData = () => {
     if (listingId) {
       dispatch(getListingApplications(listingId));
-      dispatch(getListing(listingId));
+      dispatch(fetchListingById(listingId));
     } else {
       // Load all applications across listings if no listingId provided
       dispatch(getListingApplications());

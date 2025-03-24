@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getUserProfile, updateUserProfile } from '../../redux/slices/userSlice';
+import { fetchProfile, updateUserProfile } from '../../redux/slices/userSlice';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
@@ -27,7 +27,7 @@ const EditProfileScreen = ({ route }) => {
   });
   
   useEffect(() => {
-    dispatch(getUserProfile());
+    dispatch(fetchProfile());
   }, [dispatch]);
   
   useEffect(() => {
@@ -73,7 +73,7 @@ const EditProfileScreen = ({ route }) => {
     return (
       <View style={styles.centeredContainer}>
         <Text>Erreur lors du chargement du profil.</Text>
-        <Button title="Réessayer" onPress={() => dispatch(getUserProfile())} />
+        <Button title="Réessayer" onPress={() => dispatch(fetchProfile())} />
       </View>
     );
   }

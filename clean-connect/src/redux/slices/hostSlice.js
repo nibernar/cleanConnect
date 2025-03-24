@@ -90,7 +90,15 @@ const hostSlice = createSlice({
       })
       .addCase(getActiveListings.fulfilled, (state, action) => {
         state.loading = false;
-        state.activeListings = action.payload;
+        
+        if (action.payload) {
+          state.activeListings = action.payload;
+        }
+        else if (!state.activeListings || !Array.isArray(state.activeListings)) {
+          state.activeListings = [];
+        }
+        
+        state.error = null;
       })
       .addCase(getActiveListings.rejected, (state, action) => {
         state.loading = false;

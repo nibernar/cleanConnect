@@ -223,7 +223,7 @@ const listingsSlice = createSlice({
       .addCase(fetchMyListings.fulfilled, (state, action) => {
         state.loading = false;
         
-        // Vérifier si action.payload est un tableau (ce qui est le cas ici)
+        // Vérifier si action.payload est un tableau
         if (Array.isArray(action.payload)) {
           state.listings = action.payload.map(transformListingToFrontend);
           state.pagination = {
@@ -232,6 +232,15 @@ const listingsSlice = createSlice({
             limit: action.payload.length
           };
         } 
+        // Si la réponse contient un tableau dans la propriété data
+        else if (action.payload && action.payload.data && Array.isArray(action.payload.data)) {
+          state.listings = action.payload.data.map(transformListingToFrontend);
+          state.pagination = {
+            total: action.payload.count || action.payload.data.length,
+            page: 1,
+            limit: action.payload.data.length
+          };
+        }
         // Garder la structure existante pour la compatibilité
         else if (action.payload && action.payload.listings) {
           state.listings = action.payload.listings.map(transformListingToFrontend);

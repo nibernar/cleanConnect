@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getInvoices, downloadInvoice } from '../../redux/slices/invoicesSlice';
+import { fetchInvoices, downloadInvoice } from '../../redux/slices/invoicesSlice';
 import Card from '../../components/common/Card';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../utils/colors';
@@ -20,12 +20,21 @@ const InvoicesScreen = () => {
   }, [dispatch, activeMonth, activeYear]);
 
   const loadInvoices = () => {
-    dispatch(getInvoices({ month: activeMonth + 1, year: activeYear }));
+    dispatch(fetchInvoices({ month: activeMonth + 1, year: activeYear }));
   };
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadInvoices().finally(() => setRefreshing(false));
+    
+    // Option 1: Si loadInvoices() ne retourne pas une promesse
+    loadInvoices();
+    setRefreshing(false);
+    
+    // Option 2: Faire en sorte que loadInvoices retourne une promesse
+    // Dans la définition de loadInvoices :
+    const loadInvoices = () => {
+      return dispatch(fetchInvoices({ month: activeMonth + 1, year: activeYear }));
+    };
   };
 
   const handleDownload = (invoiceId) => {

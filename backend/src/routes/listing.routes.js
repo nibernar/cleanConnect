@@ -41,6 +41,23 @@ router
   .route('/me')
   .get(protect, authorize('host', 'admin'), getMyListings);
 
+router
+.route('/create')
+.get((req, res) => {
+  res.status(200).json({ message: 'Formulaire de création d\'annonce' });
+});
+
+router
+  .route('/create/applications')
+  .get((req, res) => {
+    res.status(200).json({ message: 'Pas d\'applications pour une annonce non créée' });
+  });
+
+// Routes pour rechercher des listings (pour les nettoyeurs)
+router
+  .route('/matches')
+  .get(protect, authorize('cleaner'), searchListings);
+
 // Routes pour rechercher des listings (pour les nettoyeurs)
 router
   .route('/matches')

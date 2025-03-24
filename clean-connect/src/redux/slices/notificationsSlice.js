@@ -105,10 +105,15 @@ const notificationsSlice = createSlice({
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.notifications = action.payload;
         
-        // Calculate unread count
-        state.unreadCount = action.payload.filter(notification => !notification.read).length;
+        // Vérifier la structure de la réponse et extraire le tableau de notifications
+        const notifications = Array.isArray(action.payload) ? action.payload : 
+                             (action.payload.data ? action.payload.data : []);
+        
+        state.notifications = notifications;
+        
+        // Calculer le nombre de notifications non lues
+        state.unreadCount = notifications.filter(notification => !notification.read).length;
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
         state.isLoading = false;

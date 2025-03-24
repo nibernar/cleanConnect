@@ -21,7 +21,7 @@ const ListingsScreen = ({
   onCreateListing 
 }) => {
   const dispatch = useDispatch();
-  const { myListings: listings, loading, error } = useSelector(state => state.listings);
+  const { listings, loading, error } = useSelector(state => state.listings);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all', 'active', 'completed'
 
@@ -42,7 +42,7 @@ const ListingsScreen = ({
     if (onCreateListing) {
       onCreateListing();
     } else if (navigation) {
-      router.push('CreateListingScreen');
+      router.push('/create-listing');
     }
   };
 
