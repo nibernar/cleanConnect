@@ -1,49 +1,25 @@
 import React from 'react';
 import { Stack } from 'expo-router';
+import colors from '../../src/utils/colors';
 
+/**
+ * Layout pour le groupe d'authentification
+ * Utilise Stack Navigator pour les transitions entre écrans
+ */
 export default function AuthLayout() {
   return (
     <Stack
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#4A6572',
+          backgroundColor: colors.background,
         },
-        headerTintColor: '#fff',
+        headerTintColor: colors.text,
         headerTitleStyle: {
           fontWeight: 'bold',
         },
+        headerShown: false, // Cacher l'en-tête par défaut pour l'auth
+        animation: 'slide_from_right',
       }}
-    >
-      <Stack.Screen 
-        name="index" 
-        options={{ 
-          title: 'Connexion',
-        }} 
-      />
-      <Stack.Screen 
-        name="register-selection" 
-        options={{ 
-          title: 'Type de compte',
-        }} 
-      />
-      <Stack.Screen 
-        name="register-host" 
-        options={{ 
-          title: 'Inscription Hébergeur',
-        }} 
-      />
-      <Stack.Screen 
-        name="register-cleaner" 
-        options={{ 
-          title: 'Inscription Professionnel',
-        }} 
-      />
-      <Stack.Screen 
-        name="forgot-password" 
-        options={{ 
-          title: 'Mot de passe oublié',
-        }} 
-      />
-    </Stack>
+    />
   );
 }

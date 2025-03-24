@@ -3,6 +3,10 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 
+/**
+ * Layout principal pour les utilisateurs de type prestataire (cleaner)
+ * Utilise Tabs Navigator pour la navigation entre les fonctionnalités principales
+ */
 export default function CleanerLayout() {
   const { unreadNotifications } = useSelector(state => state.notifications);
   const { unreadMessages } = useSelector(state => state.messages);
@@ -13,7 +17,9 @@ export default function CleanerLayout() {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === 'search') {
+          if (route.name === 'dashboard') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'search') {
             iconName = focused ? 'search' : 'search-outline';
           } else if (route.name === 'schedule') {
             iconName = focused ? 'calendar' : 'calendar-outline';
@@ -29,9 +35,16 @@ export default function CleanerLayout() {
         },
         tabBarActiveTintColor: '#344955',
         tabBarInactiveTintColor: 'gray',
-        headerShown: false
+        headerShown: false,
+        unmountOnBlur: false
       })}
     >
+      <Tabs.Screen 
+        name="dashboard"
+        options={{ 
+          title: 'Tableau de bord'
+        }} 
+      />
       <Tabs.Screen 
         name="search"
         options={{ 
@@ -62,6 +75,15 @@ export default function CleanerLayout() {
         name="profile"
         options={{ 
           title: 'Profil'
+        }} 
+      />
+      
+      {/* Masquer la route index */}
+      <Tabs.Screen 
+        name="index"
+        options={{ 
+          href: null,
+          tabBarButton: () => null
         }} 
       />
     </Tabs>

@@ -20,7 +20,7 @@ const UserTypeSelectionScreen = () => {
       <View style={styles.optionsContainer}>
         <TouchableOpacity 
           style={styles.optionCard}
-          onPress={() => router.push('/register-host')}
+          onPress={() => router.push('/(auth)/register/host')}
         >
           <Image 
             source={require('../../assets/host-icon.png')} 
@@ -34,7 +34,7 @@ const UserTypeSelectionScreen = () => {
         
         <TouchableOpacity 
           style={styles.optionCard}
-          onPress={() => router.push('/register-cleaner')}
+          onPress={() => router.push('/(auth)/register/cleaner')}
         >
           <Image 
             source={require('../../assets/cleaner-icon.png')} 

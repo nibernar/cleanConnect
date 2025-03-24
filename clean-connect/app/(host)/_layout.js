@@ -3,6 +3,10 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 
+/**
+ * Layout principal pour les utilisateurs de type propriétaire (host)
+ * Utilise Tabs Navigator pour la navigation entre les fonctionnalités principales
+ */
 export default function HostLayout() {
   const { unreadNotifications } = useSelector(state => state.notifications);
   const { unreadMessages } = useSelector(state => state.messages);
@@ -30,7 +34,6 @@ export default function HostLayout() {
         tabBarActiveTintColor: '#344955',
         tabBarInactiveTintColor: 'gray',
         headerShown: false,
-        // Garantir que chaque onglet maintient son propre historique de navigation
         unmountOnBlur: false
       })}
     >
@@ -44,7 +47,6 @@ export default function HostLayout() {
         name="listings"
         options={{ 
           title: 'Annonces',
-          // Forcer un remontage de l'onglet Annonces pour éviter les problèmes de navigation persistante
           unmountOnBlur: true
         }} 
       />
@@ -68,12 +70,12 @@ export default function HostLayout() {
           title: 'Profil'
         }} 
       />
-      {/* Masquer explicitement l'onglet index - suppression de href: null qui crée le conflit */}
+      
+      {/* Masquer la route index */}
       <Tabs.Screen 
         name="index"
         options={{ 
-          tabBarButton: () => null,
-          tabBarShowLabel: false
+          href: null,
         }} 
       />
     </Tabs>

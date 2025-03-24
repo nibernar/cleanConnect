@@ -6,7 +6,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchCleanerBookings } from '../../redux/slices/bookingsSlice';
-import BookingCard from '../../components/cleaner/BookingCard';
 import { colors, spacing, typography, shadows } from '../../utils/theme';
 import { router } from 'expo-router'; // Importer router
 
@@ -98,7 +97,7 @@ const ScheduleScreen = ({ navigation }) => {
 
   const renderBookingItem = ({ item }) => (
     <TouchableOpacity onPress={() => handleBookingPress(item)}>
-      <BookingCard booking={item} />
+      <></>
     </TouchableOpacity>
   );
 
