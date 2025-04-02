@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { Redirect } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { determineUserType } from '../src/utils/userTypeDetector';
 import { fetchProfile } from '../src/redux/slices/userSlice';
 
@@ -10,6 +10,7 @@ import { fetchProfile } from '../src/redux/slices/userSlice';
  * et redirige vers le tableau de bord approprié.
  */
 export default function DashboardRouter() {
+  const router = useRouter();
   const dispatch = useDispatch();
   const { isAuthenticated, user, loading: authLoading } = useSelector(state => state.auth);
   const { loading: userLoading } = useSelector(state => state.user);

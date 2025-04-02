@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProfile, updateUserProfile } from '../../redux/slices/userSlice';
+import { fetchProfile, updateProfile } from '../../redux/slices/userSlice';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
@@ -50,7 +50,7 @@ const EditProfileScreen = ({ route }) => {
   };
   
   const handleSubmit = () => {
-    dispatch(updateUserProfile({ 
+    dispatch(updateProfile({ 
       ...formData,
       profileImage
     }));

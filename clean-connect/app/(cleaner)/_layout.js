@@ -82,7 +82,6 @@ export default function CleanerLayout() {
       <Tabs.Screen 
         name="index"
         options={{ 
-          href: null,
           tabBarButton: () => null
         }} 
       />

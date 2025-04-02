@@ -1,1 +1,4 @@
 backend/node_modules
+.DS_Store
+clean-connect/node_modules
+clean-connect/.expo

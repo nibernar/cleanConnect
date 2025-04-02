@@ -1,3 +1,226 @@
+// import React, { useEffect, useState } from 'react';
+// import { View, StyleSheet, FlatList, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { fetchInvoices, downloadInvoice } from '../../redux/slices/invoicesSlice';
+// import Card from '../../components/common/Card';
+// import { Ionicons } from '@expo/vector-icons';
+// import colors from '../../utils/colors';
+// import { formatDate } from '../../utils/dateUtils';
+
+// const InvoicesScreen = () => {
+//   const dispatch = useDispatch();
+//   const { invoices, loading, error } = useSelector(state => state.invoices);
+//   const { userType } = useSelector((state) => state.auth);
+//   const [refreshing, setRefreshing] = useState(false);
+//   const [activeMonth, setActiveMonth] = useState(new Date().getMonth());
+//   const [activeYear, setActiveYear] = useState(new Date().getFullYear());
+
+//   useEffect(() => {
+//     loadInvoices();
+//   }, [dispatch, activeMonth, activeYear]);
+
+//   const loadInvoices = () => {
+//     dispatch(fetchInvoices({ month: activeMonth + 1, year: activeYear }));
+//   };
+
+//   const handleRefresh = () => {
+//     setRefreshing(true);
+    
+//     // Option 1: Si loadInvoices() ne retourne pas une promesse
+//     loadInvoices();
+//     setRefreshing(false);
+    
+//     // Option 2: Faire en sorte que loadInvoices retourne une promesse
+//     // Dans la définition de loadInvoices :
+//     const loadInvoices = () => {
+//       return dispatch(fetchInvoices({ month: activeMonth + 1, year: activeYear }));
+//     };
+//   };
+
+
+
+
+//   const handleDownload = (invoiceId) => {
+//     dispatch(downloadInvoice(invoiceId));
+//   };
+
+//   const handlePreviousMonth = () => {
+//     if (activeMonth === 0) {
+//       setActiveMonth(11);
+//       setActiveYear(activeYear - 1);
+//     } else {
+//       setActiveMonth(activeMonth - 1);
+//     }
+//   };
+
+//   const handleNextMonth = () => {
+//     const currentDate = new Date();
+//     const currentMonth = currentDate.getMonth();
+//     const currentYear = currentDate.getFullYear();
+
+//     // Don't allow navigation to future months beyond current month
+//     if (activeYear === currentYear && activeMonth === currentMonth) {
+//       return;
+//     }
+
+//     if (activeMonth === 11) {
+//       setActiveMonth(0);
+//       setActiveYear(activeYear + 1);
+//     } else {
+//       setActiveMonth(activeMonth + 1);
+//     }
+//   };
+
+//   const getMonthName = (monthIndex) => {
+//     const months = [
+//       'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+//       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+//     ];
+//     return months[monthIndex];
+//   };
+
+//   const formatAmount = (amount) => {
+//     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+//   };
+
+//   const renderInvoiceItem = ({ item }) => {
+//     const isHost = userType === 'host';
+//     const statusColor = item.status === 'paid' ? colors.success :
+//                         item.status === 'pending' ? colors.warning : colors.error;
+    
+//     return (
+//       <Card style={styles.invoiceCard}>
+//         <View style={styles.invoiceHeader}>
+//           <View>
+//             <Text style={styles.invoiceNumber}>Facture #{item.invoiceNumber}</Text>
+//             <Text style={styles.invoiceDate}>{formatDate(item.createdAt)}</Text>
+//           </View>
+//           <Text style={[styles.invoiceStatus, { color: statusColor }]}>
+//             {item.status === 'paid' ? 'Payée' : 
+//              item.status === 'pending' ? 'En attente' : 'Annulée'}
+//           </Text>
+//         </View>
+        
+//         <View style={styles.separator} />
+        
+//         <View style={styles.invoiceDetails}>
+//           <View style={styles.detailRow}>
+//             <Text style={styles.detailLabel}>Service:</Text>
+//             <Text style={styles.detailValue}>{item.service}</Text>
+//           </View>
+          
+//           {item.listing && (
+//             <View style={styles.detailRow}>
+//               <Text style={styles.detailLabel}>Hébergement:</Text>
+//               <Text style={styles.detailValue}>{item.listing.title}</Text>
+//             </View>
+//           )}
+          
+//           <View style={styles.detailRow}>
+//             <Text style={styles.detailLabel}>Date service:</Text>
+//             <Text style={styles.detailValue}>{formatDate(item.serviceDate)}</Text>
+//           </View>
+          
+//           {isHost ? (
+//             <View style={styles.detailRow}>
+//               <Text style={styles.detailLabel}>Prestataire:</Text>
+//               <Text style={styles.detailValue}>{item.cleaner.name}</Text>
+//             </View>
+//           ) : (
+//             <View style={styles.detailRow}>
+//               <Text style={styles.detailLabel}>Client:</Text>
+//               <Text style={styles.detailValue}>{item.host.name}</Text>
+//             </View>
+//           )}
+          
+//           {item.commission > 0 && (
+//             <View style={styles.detailRow}>
+//               <Text style={styles.detailLabel}>Commission:</Text>
+//               <Text style={styles.detailValue}>{formatAmount(item.commission)}</Text>
+//             </View>
+//           )}
+          
+//           <View style={[styles.detailRow, styles.totalRow]}>
+//             <Text style={styles.totalLabel}>Montant Total:</Text>
+//             <Text style={styles.totalAmount}>{formatAmount(item.amount)}</Text>
+//           </View>
+//         </View>
+        
+//         <TouchableOpacity 
+//           style={styles.downloadButton}
+//           onPress={() => handleDownload(item._id)}
+//         >
+//           <Ionicons name="download-outline" size={20} color="white" />
+//           <Text style={styles.downloadButtonText}>Télécharger PDF</Text>
+//         </TouchableOpacity>
+//       </Card>
+//     );
+//   };
+
+//   const renderEmptyList = () => (
+//     <View style={styles.emptyContainer}>
+//       <Ionicons name="document-text-outline" size={70} color={colors.textLight} />
+//       <Text style={styles.emptyTitle}>Aucune facture</Text>
+//       <Text style={styles.emptyText}>
+//         Vous n'avez aucune facture pour {getMonthName(activeMonth)} {activeYear}.
+//       </Text>
+//     </View>
+//   );
+
+//   if (loading && !refreshing && invoices.length === 0) {
+//     return (
+//       <View style={styles.loadingContainer}>
+//         <ActivityIndicator size="large" color={colors.primary} />
+//       </View>
+//     );
+//   }
+
+//   return (
+//     <View style={styles.container}>
+//       <View style={styles.monthSelector}>
+//         <TouchableOpacity onPress={handlePreviousMonth}>
+//           <Ionicons name="chevron-back" size={24} color={colors.primary} />
+//         </TouchableOpacity>
+        
+//         <Text style={styles.monthTitle}>
+//           {getMonthName(activeMonth)} {activeYear}
+//         </Text>
+        
+//         <TouchableOpacity 
+//           onPress={handleNextMonth}
+//           disabled={activeMonth === new Date().getMonth() && activeYear === new Date().getFullYear()}
+//         >
+//           <Ionicons 
+//             name="chevron-forward" 
+//             size={24} 
+//             color={activeMonth === new Date().getMonth() && activeYear === new Date().getFullYear() ? 
+//               colors.textLight : colors.primary} 
+//           />
+//         </TouchableOpacity>
+//       </View>
+
+//       {error && (
+//         <View style={styles.errorContainer}>
+//           <Text style={styles.errorText}>{error}</Text>
+//           <TouchableOpacity onPress={handleRefresh} style={styles.retryButton}>
+//             <Text style={styles.retryButtonText}>Réessayer</Text>
+//           </TouchableOpacity>
+//         </View>
+//       )}
+
+//       <FlatList
+//         data={invoices}
+//         keyExtractor={item => item._id}
+//         renderItem={renderInvoiceItem}
+//         refreshing={refreshing}
+//         onRefresh={handleRefresh}
+//         ListEmptyComponent={renderEmptyList}
+//         contentContainerStyle={invoices.length === 0 ? styles.listEmptyContent : styles.listContent}
+//       />
+//     </View>
+//   );
+// };
+
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -15,28 +238,25 @@ const InvoicesScreen = () => {
   const [activeMonth, setActiveMonth] = useState(new Date().getMonth());
   const [activeYear, setActiveYear] = useState(new Date().getFullYear());
 
+  // Définir loadInvoices avant son utilisation pour éviter l'erreur
+  const loadInvoices = () => {
+    // Retourner la promesse pour pouvoir utiliser .finally() plus tard
+    return dispatch(fetchInvoices({ month: activeMonth + 1, year: activeYear }));
+  };
+
   useEffect(() => {
     loadInvoices();
   }, [dispatch, activeMonth, activeYear]);
 
-  const loadInvoices = () => {
-    dispatch(fetchInvoices({ month: activeMonth + 1, year: activeYear }));
-  };
-
   const handleRefresh = () => {
     setRefreshing(true);
-    
-    // Option 1: Si loadInvoices() ne retourne pas une promesse
-    loadInvoices();
-    setRefreshing(false);
-    
-    // Option 2: Faire en sorte que loadInvoices retourne une promesse
-    // Dans la définition de loadInvoices :
-    const loadInvoices = () => {
-      return dispatch(fetchInvoices({ month: activeMonth + 1, year: activeYear }));
-    };
+    // Utiliser la promesse retournée par loadInvoices
+    loadInvoices()
+      .finally(() => {
+        setRefreshing(false);
+      });
   };
-
+  
   const handleDownload = (invoiceId) => {
     dispatch(downloadInvoice(invoiceId));
   };

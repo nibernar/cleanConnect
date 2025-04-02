@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchCleanerBookings } from '../../redux/slices/bookingsSlice';
+import { fetchMyBookings } from '../../redux/slices/bookingsSlice';
 import { colors, spacing, typography, shadows } from '../../utils/theme';
 import { router } from 'expo-router'; // Importer router
 
@@ -14,14 +14,14 @@ import { router } from 'expo-router'; // Importer router
  */
 const ScheduleScreen = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { bookings, loading } = useSelector(state => state.bookings);
+  const { bookings, isLoading } = useSelector(state => state.bookings);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [markedDates, setMarkedDates] = useState({});
   
   // Refresh bookings when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      dispatch(fetchCleanerBookings());
+      dispatch(fetchMyBookings());
     }, [dispatch])
   );
 
@@ -146,7 +146,7 @@ const ScheduleScreen = ({ navigation }) => {
           </Text>
         </View>
         
-        {loading ? (
+        {isLoading ? (
           <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
         ) : filteredBookings.length > 0 ? (
           <FlatList

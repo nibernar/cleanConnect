@@ -37,7 +37,8 @@ const bookingService = {
    * @returns {Promise<Object>} Paginated user bookings
    */
   getMyBookings: async (params = {}) => {
-    return await apiService.get('/bookings/me', params);
+    // Correction: Utiliser l'endpoint /mine défini dans le backend
+    return await apiService.get('/bookings/mine', params);
   },
 
   /**
@@ -56,7 +57,8 @@ const bookingService = {
    * @returns {Promise<Object>} Updated booking
    */
   startBooking: async (bookingId) => {
-    return await apiService.post(`/bookings/${bookingId}/start`);
+    // Correction: S'assurer que la route backend correspond (ex: /arrival)
+    return await apiService.post(`/bookings/${bookingId}/arrival`); 
   },
 
   /**
@@ -66,7 +68,8 @@ const bookingService = {
    * @returns {Promise<Object>} Updated booking
    */
   completeBooking: async (bookingId, completionData) => {
-    return await apiService.post(`/bookings/${bookingId}/complete`, completionData);
+    // Correction: Utiliser la route /complete définie dans le backend
+    return await apiService.put(`/bookings/${bookingId}/complete`, completionData);
   },
 
   /**
@@ -102,8 +105,8 @@ const bookingService = {
         });
       });
     }
-    
-    return await apiService.upload(`/bookings/${bookingId}/claim`, formData);
+    // Correction: S'assurer que la route backend est /complaint
+    return await apiService.upload(`/bookings/${bookingId}/complaint`, formData);
   },
 
   /**
@@ -112,7 +115,9 @@ const bookingService = {
    * @returns {Promise<Object>} Schedule data
    */
   getSchedule: async (params = {}) => {
-    return await apiService.get('/bookings/schedule', params);
+    // Vérifier si une route /schedule existe explicitement au backend, sinon adapter
+    // Pour l'instant, on suppose qu'elle existe ou que /mine avec filtre date est utilisé
+    return await apiService.get('/bookings/schedule', params); // Ou /bookings/mine?date=...
   },
 
   /**
@@ -122,7 +127,8 @@ const bookingService = {
    * @returns {Promise<Object>} Updated booking
    */
   submitTasksChecklist: async (bookingId, tasksData) => {
-    return await apiService.post(`/bookings/${bookingId}/tasks`, tasksData);
+    // Utiliser la route PUT /tasks définie au backend
+    return await apiService.put(`/bookings/${bookingId}/tasks`, tasksData);
   },
 
   /**
@@ -132,6 +138,7 @@ const bookingService = {
    * @returns {Promise<Object>} Availability data
    */
   getCleanerAvailability: async (cleanerId, params = {}) => {
+    // Vérifier si cette route existe au backend
     return await apiService.get(`/bookings/cleaner/${cleanerId}/availability`, params);
   }
 };

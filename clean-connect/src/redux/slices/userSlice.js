@@ -222,6 +222,20 @@ const userSlice = createSlice({
     logoutUser: () => {
       console.log('🔄 Explicit logout from userSlice');
       return initialState;
+    },
+    updateSettings: (state, action) => {
+      if (state.profile) {
+        state.profile.settings = {
+          ...state.profile.settings,
+          ...action.payload
+        };
+        if (state.user) {
+          state.user.settings = {
+            ...state.user.settings,
+            ...action.payload
+          };
+        }
+      }
     }
   },
   extraReducers: (builder) => {
@@ -389,7 +403,8 @@ export const {
   clearUpdateStatus, 
   clearPasswordChangeStatus,
   syncUserWithAuth,
-  logoutUser
+  logoutUser,
+  updateSettings
 } = userSlice.actions;
 
 export default userSlice.reducer;

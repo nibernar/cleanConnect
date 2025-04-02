@@ -211,5 +211,4 @@ Pour tester l'application rapidement, vous pouvez utiliser les comptes de test s
 - **DevOps**: Git, Jest (tests), GitHub Actions (CI/CD)
 
 
-mdp oublié -> champ email -> entree -> crash
 run le front : npx expo start

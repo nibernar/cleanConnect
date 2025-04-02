@@ -8,6 +8,7 @@ import Card from '../../components/common/Card';
 import ImagePicker from '../../components/common/ImagePicker';
 import colors from '../../utils/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 const ProfileScreen = ({ navigation }) => {
   const dispatch = useDispatch();

@@ -13,14 +13,14 @@ import { router } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../utils/colors';
-import Card from '../../../../clean-connect2/src/components/common/Card';
+import Card from '../../../../clean-connect/src/components/common/Card';
 import { getCleanerStats, getAvailableListings, clearErrors } from '../../redux/slices/cleanerSlice';
 import { getUnreadNotificationsCount } from '../../redux/slices/notificationsSlice';
-import ListingCard from '../../../../clean-connect2/src/components/host/ListingCard'; // Reusing the same component for listings
+import ListingCard from '../../../../clean-connect/src/components/cleaner/ListingSwipeCard'; // Reusing the same component for listings
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 import { checkAuthToken } from '../../utils/apiDebugUtils';
-import ApiErrorDisplay from '../../../../clean-connect2/src/components/common/ApiErrorDisplay';
+import ApiErrorDisplay from '../../../../clean-connect/src/components/common/ApiErrorDisplay';
 import { formatCurrency } from '../../utils/formatters';
 
 const DashboardScreen = () => {

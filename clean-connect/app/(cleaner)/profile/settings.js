@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Card } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { logout } from '../../../src/redux/slices/authSlice';
-import { updateUserSettings } from '../../../src/redux/slices/userSlice';
+import { updateSettings } from '../../../src/redux/slices/userSlice';
 import colors from '../../../src/utils/colors';
 
 export default function CleanerSettings() {
@@ -28,22 +28,22 @@ export default function CleanerSettings() {
   
   const handleToggleNotifications = (value) => {
     setNotificationsEnabled(value);
-    dispatch(updateUserSettings({ notificationsEnabled: value }));
+    dispatch(updateSettings({ notificationsEnabled: value }));
   };
   
   const handleToggleEmailNotifications = (value) => {
     setEmailNotificationsEnabled(value);
-    dispatch(updateUserSettings({ emailNotificationsEnabled: value }));
+    dispatch(updateSettings({ emailNotificationsEnabled: value }));
   };
   
   const handleToggleLocation = (value) => {
     setLocationEnabled(value);
-    dispatch(updateUserSettings({ locationEnabled: value }));
+    dispatch(updateSettings({ locationEnabled: value }));
   };
   
   const handleToggleDarkMode = (value) => {
     setDarkModeEnabled(value);
-    dispatch(updateUserSettings({ darkModeEnabled: value }));
+    dispatch(updateSettings({ darkModeEnabled: value }));
   };
   
   const handleLogout = () => {

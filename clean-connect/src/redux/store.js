@@ -22,6 +22,7 @@ import notificationsReducer from './slices/notificationsSlice';
 import messagesReducer from './slices/messagesSlice';
 import applicationsReducer from './slices/applicationsSlice';
 import invoicesReducer from './slices/invoicesSlice';
+import bookingsReducer from './slices/bookingsSlice';
 
 // Middleware
 import syncUserStateMiddleware from './middleware/syncUserStateMiddleware';
@@ -37,6 +38,7 @@ const rootReducer = combineReducers({
   messages: messagesReducer,
   applications: applicationsReducer,
   invoices: invoicesReducer,
+  bookings: bookingsReducer,
 });
 
 // Configuration de persistence

@@ -290,4 +290,14 @@ export const {
   clearTaskCompletionStatus
 } = bookingsSlice.actions;
 
-export default bookingsSlice.reducer;
+// Selectors (AJOUT DE CE BLOC)
+export const selectAllBookings = (state) => state.bookings.bookings;
+export const selectCurrentBooking = (state) => state.bookings.currentBooking;
+export const selectBookingsLoading = (state) => state.bookings.isLoading;
+export const selectBookingsError = (state) => state.bookings.error;
+export const selectIssueSubmitStatus = (state) => state.bookings.issueSubmitStatus;
+export const selectClaimSubmitStatus = (state) => state.bookings.claimSubmitStatus;
+export const selectTaskCompletionStatus = (state) => state.bookings.taskCompletionStatus;
+
+
+export default bookingsSlice.reducer; // Cette ligne est maintenant APRES les exports des sélecteurs
