@@ -1,4 +1,5 @@
-import { apiService } from './apiService';
+// Correction: Importer 'api' depuis './api'
+import api from './api'; 
 
 /**
  * Service for notification related API calls
@@ -10,7 +11,8 @@ const notificationService = {
    * @returns {Promise<Object>} Paginated notifications
    */
   getNotifications: async (params = {}) => {
-    return await apiService.get('/notifications', params);
+    // Correction: Utiliser api.get
+    return await api.get('/notifications', params);
   },
 
   /**
@@ -19,7 +21,8 @@ const notificationService = {
    * @returns {Promise<Object>} Updated notification
    */
   markAsRead: async (id) => {
-    return await apiService.patch(`/notifications/${id}/read`);
+    // Correction: Utiliser api.patch
+    return await api.patch(`/notifications/${id}/read`);
   },
 
   /**
@@ -27,7 +30,8 @@ const notificationService = {
    * @returns {Promise<Object>} Operation result
    */
   markAllAsRead: async () => {
-    return await apiService.patch('/notifications/read-all');
+    // Correction: Utiliser api.patch
+    return await api.patch('/notifications/read-all');
   },
 
   /**
@@ -35,7 +39,8 @@ const notificationService = {
    * @returns {Promise<Object>} Count of unread notifications
    */
   getUnreadCount: async () => {
-    return await apiService.get('/notifications/unread-count');
+    // Correction: Utiliser api.get
+    return await api.get('/notifications/unread-count');
   },
 
   /**
@@ -44,7 +49,8 @@ const notificationService = {
    * @returns {Promise<Object>} Operation result
    */
   deleteNotification: async (id) => {
-    return await apiService.delete(`/notifications/${id}`);
+    // Correction: Utiliser api.delete (importé comme api.del)
+    return await api.delete(`/notifications/${id}`);
   },
 
   /**
@@ -53,7 +59,8 @@ const notificationService = {
    * @returns {Promise<Object>} Operation result
    */
   updatePushToken: async (token) => {
-    return await apiService.post('/notifications/push-token', { token });
+    // Correction: Utiliser api.post
+    return await api.post('/notifications/push-token', { token });
   },
 
   /**
@@ -62,7 +69,8 @@ const notificationService = {
    * @returns {Promise<Object>} Updated preferences
    */
   updatePreferences: async (preferences) => {
-    return await apiService.put('/notifications/preferences', preferences);
+    // Correction: Utiliser api.put
+    return await api.put('/notifications/preferences', preferences);
   },
 
   /**
@@ -70,7 +78,8 @@ const notificationService = {
    * @returns {Promise<Object>} Current notification preferences
    */
   getPreferences: async () => {
-    return await apiService.get('/notifications/preferences');
+    // Correction: Utiliser api.get
+    return await api.get('/notifications/preferences');
   }
 };
 

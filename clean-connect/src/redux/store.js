@@ -23,6 +23,7 @@ import messagesReducer from './slices/messagesSlice';
 import applicationsReducer from './slices/applicationsSlice';
 import invoicesReducer from './slices/invoicesSlice';
 import bookingsReducer from './slices/bookingsSlice';
+import adminReducer from './slices/adminSlice'; // <-- Importer le nouveau reducer
 
 // Middleware
 import syncUserStateMiddleware from './middleware/syncUserStateMiddleware';
@@ -39,6 +40,7 @@ const rootReducer = combineReducers({
   applications: applicationsReducer,
   invoices: invoicesReducer,
   bookings: bookingsReducer,
+  admin: adminReducer, // <-- Ajouter le reducer admin ici
 });
 
 // Configuration de persistence
@@ -47,16 +49,15 @@ const persistConfig = {
   version: 1,
   storage: AsyncStorage,
   // Whitelist - seuls ces reducers seront persistés
-  whitelist: ['auth'], 
+  whitelist: ['auth'], // Ne pas persister l'état admin par défaut
   // Blacklist - ces reducers ne seront pas persistés
-  blacklist: [], 
+  blacklist: ['admin', 'user', 'listings', 'cleaner', 'host', 'notifications', 'messages', 'applications', 'invoices', 'bookings'], // Ajouter admin à la blacklist
 };
 
 // Définir store basé sur l'environnement
 let store;
 let persistor;
 
-// Créer une configuration différente pour SSR/client
 const createStore = () => {
   if (isClient) {
     console.log('Initialisation du store avec persistence (Client)');
@@ -88,7 +89,6 @@ const createStore = () => {
   }
 };
 
-// Initialiser le store si ce n'est pas déjà fait
 if (!store) {
   const storeConfig = createStore();
   store = storeConfig.store;

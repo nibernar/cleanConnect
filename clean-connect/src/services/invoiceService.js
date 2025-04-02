@@ -1,4 +1,5 @@
-import { apiService } from './apiService';
+// Correction: Importer 'api' depuis './api'
+import api from './api'; 
 
 /**
  * Service for invoice related API calls
@@ -10,7 +11,8 @@ const invoiceService = {
    * @returns {Promise<Object>} Paginated invoices
    */
   getInvoices: async (params = {}) => {
-    return await apiService.get('/invoices', params);
+    // Correction: Utiliser api.get
+    return await api.get('/invoices', params);
   },
 
   /**
@@ -19,7 +21,8 @@ const invoiceService = {
    * @returns {Promise<Object>} Invoice data
    */
   getInvoice: async (id) => {
-    return await apiService.get(`/invoices/${id}`);
+    // Correction: Utiliser api.get
+    return await api.get(`/invoices/${id}`);
   },
 
   /**
@@ -28,7 +31,9 @@ const invoiceService = {
    * @returns {Promise<Object>} Invoice data
    */
   getBookingInvoice: async (bookingId) => {
-    return await apiService.get(`/invoices/booking/${bookingId}`);
+    // Correction: Utiliser api.get
+    // Vérifier si la route backend est correcte
+    return await api.get(`/invoices/booking/${bookingId}`); 
   },
 
   /**
@@ -37,7 +42,16 @@ const invoiceService = {
    * @returns {Promise<Blob>} Invoice PDF blob
    */
   downloadInvoice: async (invoiceId) => {
-    return await apiService.download(`/invoices/${invoiceId}/download`);
+    // Correction: Utiliser api.get avec responseType blob si nécessaire
+    // L'objet 'api' exporté par api.js a-t-il une méthode download?
+    // Sinon, il faut configurer axios pour le blob
+    try {
+        const response = await api.get(`/invoices/${invoiceId}/download`, { responseType: 'blob' });
+        return response; // Retourner la réponse complète pour accéder au blob
+    } catch(error) {
+        console.error('Error downloading invoice:', error);
+        throw error; // Renvoyer l'erreur
+    }
   },
 
   /**
@@ -46,7 +60,9 @@ const invoiceService = {
    * @returns {Promise<Object>} Paginated host invoices
    */
   getHostInvoices: async (params = {}) => {
-    return await apiService.get('/invoices/host', params);
+    // Correction: Utiliser api.get
+    // Vérifier si la route est /invoices/me ou /invoices/host
+    return await api.get('/invoices/me?type=host', params); // Supposition
   },
 
   /**
@@ -55,7 +71,9 @@ const invoiceService = {
    * @returns {Promise<Object>} Paginated cleaner invoices
    */
   getCleanerInvoices: async (params = {}) => {
-    return await apiService.get('/invoices/cleaner', params);
+    // Correction: Utiliser api.get
+     // Vérifier si la route est /invoices/me ou /invoices/cleaner
+    return await api.get('/invoices/me?type=cleaner', params); // Supposition
   },
 
   /**
@@ -64,7 +82,8 @@ const invoiceService = {
    * @returns {Promise<Object>} Invoice statistics
    */
   getInvoiceStatistics: async (params = {}) => {
-    return await apiService.get('/invoices/statistics', params);
+    // Correction: Utiliser api.get
+    return await api.get('/invoices/statistics', params);
   },
 
   /**
@@ -73,7 +92,8 @@ const invoiceService = {
    * @returns {Promise<Object>} Paginated payment history
    */
   getPaymentHistory: async (params = {}) => {
-    return await apiService.get('/invoices/payments', params);
+    // Correction: Utiliser api.get
+    return await api.get('/invoices/payments', params);
   },
 
   /**
@@ -83,7 +103,8 @@ const invoiceService = {
    * @returns {Promise<Object>} Operation result
    */
   sendInvoiceByEmail: async (invoiceId, emailData) => {
-    return await apiService.post(`/invoices/${invoiceId}/send-email`, emailData);
+    // Correction: Utiliser api.post
+    return await api.post(`/invoices/${invoiceId}/send-email`, emailData);
   },
 
   /**
@@ -92,7 +113,9 @@ const invoiceService = {
    * @returns {Promise<Object>} Monthly earnings data
    */
   getMonthlyEarnings: async (params = {}) => {
-    return await apiService.get('/invoices/earnings/monthly', params);
+    // Correction: Utiliser api.get
+    // Vérifier si la route est correcte (peut-être /cleaners/me/earnings?)
+    return await api.get('/invoices/earnings/monthly', params);
   },
 
   /**
@@ -101,7 +124,9 @@ const invoiceService = {
    * @returns {Promise<Object>} Yearly earnings data
    */
   getYearlyEarnings: async (params = {}) => {
-    return await apiService.get('/invoices/earnings/yearly', params);
+    // Correction: Utiliser api.get
+    // Vérifier si la route est correcte
+    return await api.get('/invoices/earnings/yearly', params);
   }
 };
 

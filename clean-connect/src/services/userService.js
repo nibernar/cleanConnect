@@ -1,134 +1,83 @@
-import { apiService } from './apiService';
+// Correction: Importer { api } au niveau supérieur
+import { api as apiInstance } from './api'; 
 
-/**
- * Service for user related API calls
- */
+// Wrapper pour s'assurer que l'instance api est chargée
+// Peut être utile si des dépendances circulaires posent problème
+const getApi = () => {
+    if (!apiInstance) {
+        console.error("API instance requested before module fully loaded!");
+        // Tenter une ré-importation dynamique (solution de secours)
+        try {
+            const dynamicApi = require('./api').api;
+            if(dynamicApi) return dynamicApi;
+        } catch (e) {
+             console.error("Dynamic API import failed:", e);
+        }
+        // Retourner un objet mock pour éviter le crash immédiat mais signaler l'erreur
+        return { get: ()=>Promise.reject("API not loaded"), post: ()=>Promise.reject("API not loaded"), put: ()=>Promise.reject("API not loaded"), delete: ()=>Promise.reject("API not loaded"), patch: ()=>Promise.reject("API not loaded"), upload: ()=>Promise.reject("API not loaded"), setAuthToken: ()=>{} }; 
+    }
+    return apiInstance;
+};
+
+
 const userService = {
-  /**
-   * Get user profile
-   * @returns {Promise<Object>} User profile data
-   */
+  // --- User Profile (Common) ---
   getProfile: async () => {
-    return await apiService.get('/users/profile');
+    return await getApi().get('/users/profile');
   },
-
-  /**
-   * Update user profile
-   * @param {Object} profileData Updated profile data
-   * @returns {Promise<Object>} Updated user profile
-   */
   updateProfile: async (profileData) => {
-    return await apiService.put('/users/profile', profileData);
+    // Utiliser getApi() pour être sûr
+    return await getApi().put('/users/profile', profileData);
   },
-
-  /**
-   * Update user password
-   * @param {Object} passwordData Current and new password
-   * @returns {Promise<Object>} Update result
-   */
   updatePassword: async (passwordData) => {
-    return await apiService.put('/users/password', passwordData);
+    return await getApi().put('/auth/updatepassword', passwordData); 
   },
-
-  /**
-   * Get host profile
-   * @returns {Promise<Object>} Host profile data
-   */
-  getHostProfile: async () => {
-    return await apiService.get('/hosts/profile');
-  },
-
-  /**
-   * Update host profile
-   * @param {Object} profileData Updated profile data
-   * @returns {Promise<Object>} Updated host profile
-   */
-  updateHostProfile: async (profileData) => {
-    return await apiService.put('/hosts/profile', profileData);
-  },
-
-  /**
-   * Get cleaner profile
-   * @returns {Promise<Object>} Cleaner profile data
-   */
-  getCleanerProfile: async () => {
-    return await apiService.get('/cleaners/profile');
-  },
-
-  /**
-   * Update cleaner profile
-   * @param {Object} profileData Updated profile data
-   * @returns {Promise<Object>} Updated cleaner profile
-   */
-  updateCleanerProfile: async (profileData) => {
-    return await apiService.put('/cleaners/profile', profileData);
-  },
-
-  /**
-   * Update cleaner work preferences
-   * @param {Object} preferencesData Updated preferences data
-   * @returns {Promise<Object>} Updated preferences
-   */
-  updateCleanerPreferences: async (preferencesData) => {
-    return await apiService.put('/cleaners/preferences', preferencesData);
-  },
-
-  /**
-   * Get cleaner's banking information
-   * @returns {Promise<Object>} Banking information
-   */
-  getBankingInfo: async () => {
-    return await apiService.get('/cleaners/banking');
-  },
-
-  /**
-   * Update cleaner's banking information
-   * @param {Object} bankingData Banking information data
-   * @returns {Promise<Object>} Updated banking information
-   */
-  updateBankingInfo: async (bankingData) => {
-    return await apiService.put('/cleaners/banking', bankingData);
-  },
-
-  /**
-   * Upload profile picture
-   * @param {FormData} formData Form data with image
-   * @returns {Promise<Object>} Upload result
-   */
   uploadProfilePicture: async (imageUri) => {
     const formData = new FormData();
-    formData.append('profilePicture', {
-      uri: imageUri,
-      type: 'image/jpeg',
-      name: 'profile-picture.jpg'
-    });
-    
-    return await apiService.upload('/users/profile-picture', formData);
+    formData.append('file', { uri: imageUri, type: 'image/jpeg', name: 'profile-picture.jpg' });
+    return await getApi().upload('/users/profile/photo', formData); 
   },
-
-  /**
-   * Upload identity document
-   * @param {FormData} formData Form data with document
-   * @returns {Promise<Object>} Upload result
-   */
   uploadIdentityDocument: async (imageUri, documentType) => {
     const formData = new FormData();
-    formData.append('document', {
-      uri: imageUri,
-      type: 'image/jpeg',
-      name: `${documentType}-document.jpg`
-    });
+    formData.append('file', { uri: imageUri, type: 'image/jpeg', name: `${documentType}-document.jpg` });
     formData.append('documentType', documentType);
-    
-    return await apiService.upload('/users/identity-document', formData);
+    return await getApi().upload('/users/identity-document', formData);
+  },
+  getStatistics: async () => {
+    return await getApi().get('/users/statistics');
   },
 
-  /**
-   * Get user statistics
-   * @returns {Promise<Object>} User statistics
-   */
-  getStatistics: async () => {
-    return await apiService.get('/users/statistics');
+  // --- Host Specific ---
+  getHostProfile: async () => {
+    return await getApi().get('/hosts/me'); 
+  },
+  updateHostProfile: async (profileData) => {
+    return await getApi().put('/hosts/me', profileData);
+  },
+
+  // --- Cleaner Specific ---
+  getCleanerProfile: async () => {
+    return await getApi().get('/cleaners/me'); 
+  },
+  updateCleanerProfile: async (profileData) => {
+    return await getApi().put('/cleaners/me', profileData);
+  },
+  updateCleanerPreferences: async (preferencesData) => {
+    return await getApi().put('/cleaners/me/preferences', preferencesData);
+  },
+  getBankingInfo: async () => {
+    return await getApi().get('/cleaners/me/banking');
+  },
+  updateBankingInfo: async (bankingData) => {
+    return await getApi().put('/cleaners/me/banking', bankingData);
+  },
+
+  // --- Admin Specific --- 
+  getAllCleaners: async (params = {}) => {
+      return await getApi().get('/cleaners', params);
+  },
+  verifyCleanerStatus: async (cleanerId, status) => {
+      return await getApi().put(`/cleaners/${cleanerId}/verify`, { status });
   }
 };
 

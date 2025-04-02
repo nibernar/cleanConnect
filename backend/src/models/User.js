@@ -20,7 +20,8 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['host', 'cleaner'],
+    // Correction: Ajout de 'admin' aux rôles autorisés
+    enum: ['host', 'cleaner', 'admin'], 
     required: true
   },
   firstName: {

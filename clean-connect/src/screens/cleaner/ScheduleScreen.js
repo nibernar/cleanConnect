@@ -2,260 +2,215 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native'; // Ou useFocusEffect from expo-router si utilisé
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchMyBookings } from '../../redux/slices/bookingsSlice';
-import { colors, spacing, typography, shadows } from '../../utils/theme';
-import { router } from 'expo-router'; // Importer router
+import { fetchMyBookings, selectAllBookings, selectBookingsLoading } from '../../redux/slices/bookingsSlice'; 
+// Correction: Chemin vers le thème corrigé
+import { colors, spacing, typography, shadows } from '../../../src/utils/theme'; 
+import { router } from 'expo-router';
+// Correction: Importer Card depuis common
+import Card from '../../components/common/Card';
 
 /**
  * Screen for displaying cleaner's schedule and bookings
  */
-const ScheduleScreen = ({ navigation }) => {
+const ScheduleScreen = () => { 
   const dispatch = useDispatch();
-  const { bookings, isLoading } = useSelector(state => state.bookings);
+  const bookings = useSelector(selectAllBookings) || [];
+  const isLoading = useSelector(selectBookingsLoading);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [markedDates, setMarkedDates] = useState({});
   
-  // Refresh bookings when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       dispatch(fetchMyBookings());
     }, [dispatch])
   );
 
-  // Process bookings to mark calendar dates and filter for selected date
   useEffect(() => {
-    if (bookings && bookings.length > 0) {
-      // Create marked dates object for calendar
+    if (Array.isArray(bookings) && bookings.length > 0) {
       const marks = {};
       bookings.forEach(booking => {
-        const bookingDate = new Date(booking.date).toISOString().split('T')[0];
-        
-        if (marks[bookingDate]) {
-          // If we already have bookings for this date, increase the dots
-          marks[bookingDate].dots.push({
-            key: booking.id,
-            color: getStatusColor(booking.status),
-          });
-        } else {
-          // First booking for this date
-          marks[bookingDate] = {
-            dots: [
-              {
-                key: booking.id,
+        if (booking.dateScheduled?.date) { 
+            const bookingDateStr = new Date(booking.dateScheduled.date).toISOString().split('T')[0];
+            const dot = {
+                key: booking._id || Math.random().toString(),
                 color: getStatusColor(booking.status),
-              }
-            ],
-            marked: true
-          };
+            };
+            if (marks[bookingDateStr]) {
+              marks[bookingDateStr].dots.push(dot);
+            } else {
+              marks[bookingDateStr] = { dots: [dot], marked: true };
+            }
+        } else {
+            console.warn('Booking sans date valide:', booking);
         }
       });
-      
-      // Add selected date styling
-      marks[selectedDate] = {
-        ...marks[selectedDate],
-        selected: true,
-        selectedColor: colors.primary,
-      };
-      
+      marks[selectedDate] = { ...marks[selectedDate], selected: true, selectedColor: colors.primary, selectedTextColor: colors.background };
       setMarkedDates(marks);
+    } else {
+        setMarkedDates({ [selectedDate]: { selected: true, selectedColor: colors.primary, selectedTextColor: colors.background } });
     }
   }, [bookings, selectedDate]);
 
-  // Helper to get color based on booking status
   const getStatusColor = (status) => {
     switch (status) {
-      case 'confirmed':
-        return colors.success;
-      case 'pending':
-        return colors.warning;
-      case 'completed':
-        return colors.info;
+      case 'confirmed': return colors.success || 'green';
+      case 'pending': return colors.warning || 'orange';
+      case 'completed': return colors.info || 'blue';
       case 'cancelled':
-        return colors.error;
-      default:
-        return colors.textTertiary;
+      case 'rejected': return colors.error || 'red';
+      default: return colors.textTertiary || 'grey';
     }
   };
 
-  // Get localized month name
-  const getMonthName = (date) => {
-    return new Date(date).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-  };
-
-  // Filter bookings for selected date
-  const filteredBookings = bookings.filter(booking => {
-    const bookingDate = new Date(booking.date).toISOString().split('T')[0];
-    return bookingDate === selectedDate;
-  });
+  const filteredBookings = Array.isArray(bookings) ? bookings.filter(booking => {
+    if (!booking.dateScheduled?.date) return false;
+    const bookingDateStr = new Date(booking.dateScheduled.date).toISOString().split('T')[0];
+    return bookingDateStr === selectedDate;
+  }) : [];
 
   const handleBookingPress = (booking) => {
-    router.push('BookingDetail', { bookingId: booking.id });
+    if (booking?._id) {
+      router.push(`/(cleaner)/bookings/${booking._id}`); 
+    } else {
+        console.warn("Tentative de navigation sans ID de réservation valide", booking);
+    }
   };
 
+  // Correction: Utiliser le rendu simple avec Card
   const renderBookingItem = ({ item }) => (
     <TouchableOpacity onPress={() => handleBookingPress(item)}>
-      <></>
+        <Card style={styles.bookingCard}> 
+          <View style={styles.bookingCardContent}>
+              <Text style={styles.bookingTitle}>{item.listing?.title || 'Titre Indisponible'}</Text>
+              <Text style={styles.bookingStatusText(item.status)}>Statut: {item.status || 'Inconnu'}</Text>
+              {/* Ajouter d'autres infos si nécessaire, ex: Heure */}
+              {item.dateScheduled?.startTime && <Text style={styles.bookingTime}>Heure: {item.dateScheduled.startTime} {item.dateScheduled.endTime ? `- ${item.dateScheduled.endTime}`: ''}</Text>}
+          </View>
+        </Card>
     </TouchableOpacity>
   );
+
+  // Styles définis dans un bloc try...catch pour la robustesse
+  let styles = {};
+  try {
+    styles = StyleSheet.create({
+      container: { flex: 1, backgroundColor: colors.background || '#f8f9fa' },
+      header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.sm },
+      title: { ...typography.h1, marginBottom: 0 },
+      calendarContainer: { marginHorizontal: spacing.md, marginBottom: spacing.sm, borderRadius: 8, backgroundColor: 'white', ...shadows.small }, 
+      bookingsContainer: { flex: 1, paddingHorizontal: spacing.md },
+      dateHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border || '#eee', paddingBottom: spacing.sm },
+      dateText: { ...typography.h3, marginLeft: spacing.sm, color: colors.textSecondary, textTransform: 'capitalize', fontWeight: '600' },
+      listContent: { paddingBottom: spacing.xl },
+      emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
+      emptyText: { ...typography.h3, color: colors.textTertiary, marginTop: spacing.md },
+      loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+      bookingCard: { 
+          marginBottom: spacing.sm, 
+          padding: spacing.md, // Utiliser le padding interne de Card
+          backgroundColor: 'white' // Fond blanc pour la carte
+        },
+      bookingCardContent: {
+          // Styles pour le contenu à l'intérieur de la carte
+      },
+      bookingTitle: { 
+          ...typography.h4, 
+          fontWeight: 'bold', 
+          marginBottom: spacing.xs 
+      },
+      bookingStatusText: (status) => ({ // Fonction pour style dynamique
+        ...typography.bodySmall,
+        color: getStatusColor(status),
+        fontWeight: 'bold',
+        marginBottom: spacing.xs
+      }),
+      bookingTime: {
+          ...typography.bodySmall,
+          color: colors.textSecondary
+      }
+    });
+  } catch (themeError) {
+      console.error("Erreur lors de l'accès aux styles du thème:", themeError);
+      // Définir des styles par défaut minimaux en cas d'erreur
+      styles = StyleSheet.create({ 
+          container: { flex: 1 }, 
+          emptyText: {}, dateText: {}, title: {}, header: {}, 
+          calendarContainer:{}, bookingsContainer:{}, dateHeader:{}, listContent:{}, 
+          emptyContainer:{}, loader:{}, bookingCard:{ padding: 10, marginVertical: 5, backgroundColor:'#eee' },
+          bookingCardContent:{}, bookingTitle:{ fontWeight:'bold' }, bookingStatusText:()=>({}), bookingTime:{} 
+      });
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Planning</Text>
-        <Text style={styles.subtitle}>
-          Consultez vos missions à venir
-        </Text>
       </View>
       
-      <View style={[styles.calendarContainer, shadows.medium]}>
-        <Calendar
-          current={selectedDate}
-          onDayPress={day => setSelectedDate(day.dateString)}
-          monthFormat={'yyyy MM'}
-          markingType={'multi-dot'}
-          markedDates={markedDates}
-          theme={{
-            calendarBackground: colors.background,
-            textSectionTitleColor: colors.primary,
-            selectedDayBackgroundColor: colors.primary,
-            selectedDayTextColor: colors.background,
-            todayTextColor: colors.primary,
-            dayTextColor: colors.text,
-            textDisabledColor: colors.textTertiary,
-            dotColor: colors.primary,
-            selectedDotColor: colors.background,
-            arrowColor: colors.primary,
-            monthTextColor: colors.text,
-            indicatorColor: colors.primary,
+      <Calendar
+        // ... props Calendar ...
+        theme={{
+            calendarBackground: colors.background || '#f8f9fa',
+            textSectionTitleColor: colors.primary || 'blue',
+            selectedDayBackgroundColor: colors.primary || 'blue',
+            selectedDayTextColor: colors.background || 'white',
+            todayTextColor: colors.primary || 'blue',
+            dayTextColor: colors.text || 'black',
+            textDisabledColor: colors.textTertiary || 'grey',
+            dotColor: colors.primary || 'blue',
+            selectedDotColor: colors.background || 'white',
+            arrowColor: colors.primary || 'blue',
+            monthTextColor: colors.text || 'black',
+            indicatorColor: colors.primary || 'blue',
+            textDayFontWeight: '400',
+            textMonthFontWeight: 'bold',
+            textDayHeaderFontWeight: '500',
+            textDayFontSize: 16,
+            textMonthFontSize: 18,
+            textDayHeaderFontSize: 14
           }}
-        />
-      </View>
+        style={[styles.calendarContainer]}
+         current={selectedDate}
+         onDayPress={day => setSelectedDate(day.dateString)}
+         monthFormat={'yyyy MMMM'}
+         markingType={'multi-dot'}
+         markedDates={markedDates}
+      />
       
       <View style={styles.bookingsContainer}>
         <View style={styles.dateHeader}>
-          <Ionicons name="calendar" size={22} color={colors.primary} />
+          <Ionicons name="calendar-outline" size={20} color={colors.textSecondary || 'grey'} />
           <Text style={styles.dateText}>
-            {new Date(selectedDate).toLocaleDateString('fr-FR', { 
-              weekday: 'long',
-              day: 'numeric', 
-              month: 'long' 
+            {new Date(selectedDate + 'T00:00:00').toLocaleDateString('fr-FR', { 
+              weekday: 'long', day: 'numeric', month: 'long' 
             })}
           </Text>
         </View>
         
         {isLoading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+          <ActivityIndicator size="large" color={colors.primary || 'blue'} style={styles.loader} />
         ) : filteredBookings.length > 0 ? (
           <FlatList
             data={filteredBookings}
             renderItem={renderBookingItem}
-            keyExtractor={item => item.id}
+            keyExtractor={item => item._id || Math.random().toString()}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
           />
         ) : (
           <View style={styles.emptyContainer}>
-            <Ionicons name="calendar-outline" size={60} color={colors.textTertiary} />
-            <Text style={styles.emptyText}>Aucune mission prévue</Text>
-            <Text style={styles.emptySubText}>
-              Vous n'avez pas de mission programmée pour cette journée
-            </Text>
+            <Ionicons name="today-outline" size={50} color={colors.textTertiary || 'grey'} />
+            <Text style={styles.emptyText}>Aucune mission ce jour</Text>
           </View>
         )}
       </View>
       
-      <TouchableOpacity 
-        style={styles.fabButton}
-        onPress={() => router.push('Search')}
-      >
-        <Ionicons name="add" size={24} color={colors.background} />
-        <Text style={styles.fabText}>Trouver des missions</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  title: {
-    ...typography.h1,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  calendarContainer: {
-    margin: spacing.md,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: colors.background,
-  },
-  bookingsContainer: {
-    flex: 1,
-    padding: spacing.md,
-  },
-  dateHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  dateText: {
-    ...typography.h3,
-    marginLeft: spacing.sm,
-    color: colors.text,
-    textTransform: 'capitalize',
-  },
-  listContent: {
-    paddingBottom: spacing.xl,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  emptyText: {
-    ...typography.h2,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  emptySubText: {
-    ...typography.body,
-    textAlign: 'center',
-    color: colors.textSecondary,
-  },
-  loader: {
-    marginTop: spacing.xl,
-  },
-  fabButton: {
-    position: 'absolute',
-    bottom: spacing.lg,
-    right: spacing.lg,
-    backgroundColor: colors.primary,
-    borderRadius: 30,
-    padding: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...shadows.medium,
-  },
-  fabText: {
-    ...typography.button,
-    color: colors.background,
-    marginLeft: spacing.xs,
-  },
-});
 
 export default ScheduleScreen;

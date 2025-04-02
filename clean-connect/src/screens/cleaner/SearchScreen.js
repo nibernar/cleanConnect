@@ -1,291 +1,209 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, Animated, PanResponder, Text, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { View, StyleSheet, Animated, PanResponder, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchListingsForCleaner, applyToListing, rejectListing } from '../../redux/slices/listingsSlice';
+import { 
+    fetchListingsForCleaner, 
+    applyToListing, 
+    rejectListing, 
+    selectAllListings,
+    selectListingsLoading 
+} from '../../redux/slices/listingsSlice';
 import ListingSwipeCard from '../../components/cleaner/ListingSwipeCard';
-import { colors, spacing, typography } from '../../utils/theme';
+import { colors, spacing, typography } from '../../../src/utils/theme'; 
 import { Ionicons } from '@expo/vector-icons';
+import Button from '../../components/common/Button';
 
-/**
- * Screen for cleaners to browse and swipe through available listings
- */
 const SearchScreen = () => {
   const dispatch = useDispatch();
-  const { availableListings, loading } = useSelector(state => state.listings);
+  const availableListings = useSelector(selectAllListings) || []; 
+  const loading = useSelector(selectListingsLoading);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipedAll, setSwipedAll] = useState(false);
 
+  console.log('[SearchScreen] Render - isLoading:', loading, 'listings count:', availableListings.length, 'currentIndex:', currentIndex, 'swipedAll:', swipedAll);
+
   const position = useRef(new Animated.ValueXY()).current;
-  const rotate = position.x.interpolate({
-    inputRange: [-200, 0, 200],
-    outputRange: ['-30deg', '0deg', '30deg'],
-    extrapolate: 'clamp',
-  });
+  const rotate = position.x.interpolate({ inputRange: [-200, 0, 200], outputRange: ['-30deg', '0deg', '30deg'], extrapolate: 'clamp' });
+  const likeOpacity = position.x.interpolate({ inputRange: [25, 100], outputRange: [0, 1], extrapolate: 'clamp' });
+  const dislikeOpacity = position.x.interpolate({ inputRange: [-100, -25], outputRange: [1, 0], extrapolate: 'clamp' });
+  const nextCardScale = position.x.interpolate({ inputRange: [-200, 0, 200], outputRange: [1, 0.8, 1], extrapolate: 'clamp' });
 
-  const likeOpacity = position.x.interpolate({
-    inputRange: [25, 100],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-
-  const dislikeOpacity = position.x.interpolate({
-    inputRange: [-100, -25],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
-
-  const nextCardScale = position.x.interpolate({
-    inputRange: [-200, 0, 200],
-    outputRange: [1, 0.8, 1],
-    extrapolate: 'clamp',
-  });
+  const resetPosition = () => {
+      position.setValue({ x: 0, y: 0 });
+  }
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => !swipedAll && availableListings.length > 0 && currentIndex < availableListings.length,
       onPanResponderMove: (_, gesture) => {
         position.setValue({ x: gesture.dx, y: gesture.dy });
       },
       onPanResponderRelease: (_, gesture) => {
         if (gesture.dx > 120) {
-          // Swiped right (apply)
-          Animated.spring(position, {
-            toValue: { x: 500, y: gesture.dy },
-            useNativeDriver: true,
-          }).start(() => {
-            handleSwipe('right');
-          });
+          Animated.spring(position, { toValue: { x: 500, y: gesture.dy }, useNativeDriver: false }).start(() => handleSwipe('right'));
         } else if (gesture.dx < -120) {
-          // Swiped left (reject)
-          Animated.spring(position, {
-            toValue: { x: -500, y: gesture.dy },
-            useNativeDriver: true,
-          }).start(() => {
-            handleSwipe('left');
-          });
+          Animated.spring(position, { toValue: { x: -500, y: gesture.dy }, useNativeDriver: false }).start(() => handleSwipe('left'));
         } else {
-          // Return to original position
-          Animated.spring(position, {
-            toValue: { x: 0, y: 0 },
-            friction: 4,
-            useNativeDriver: true,
-          }).start();
+          Animated.spring(position, { toValue: { x: 0, y: 0 }, friction: 4, useNativeDriver: false }).start();
         }
       },
     })
   ).current;
 
-  const handleSwipe = direction => {
+  const handleSwipe = useCallback((direction) => {
+    if (currentIndex >= availableListings.length) return;
     const currentListing = availableListings[currentIndex];
+    const listingId = currentListing?.id;
+    console.log(`[SearchScreen] Swiped ${direction} on Listing ID: ${listingId}`);
     
-    if (direction === 'right' && currentListing) {
-      dispatch(applyToListing(currentListing.id));
-    } else if (direction === 'left' && currentListing) {
-      dispatch(rejectListing(currentListing.id));
+    if (direction === 'right' && listingId) {
+      console.log(`[SearchScreen] Dispatching applyToListing for ID: ${listingId}`);
+      dispatch(applyToListing(listingId));
+    } else if (direction === 'left' && listingId) {
+       if(typeof rejectListing === 'function') {
+           console.log(`[SearchScreen] Dispatching rejectListing for ID: ${listingId}`);
+           dispatch(rejectListing(listingId));
+       } else {
+           console.warn('[SearchScreen] rejectListing action is not available.');
+       }
     }
 
-    position.setValue({ x: 0, y: 0 });
-    
-    if (currentIndex === availableListings.length - 1) {
-      setSwipedAll(true);
-    } else {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
+     Animated.timing(position, { toValue: { x: 0, y: 0 }, duration: 100, useNativeDriver: false }).start(() => {
+        if (currentIndex >= availableListings.length - 1) {
+            console.log('[SearchScreen] Swiped all cards.');
+            setSwipedAll(true);
+        } else {
+            setCurrentIndex((prevIndex) => prevIndex + 1);
+        }
+     });
 
-  useEffect(() => {
-    dispatch(fetchListingsForCleaner());
+  }, [currentIndex, availableListings, dispatch, position]);
+
+  const reloadListings = useCallback(() => {
+      console.log("[SearchScreen] Reloading listings...");
+      setCurrentIndex(0);
+      setSwipedAll(false);
+      dispatch(fetchListingsForCleaner());
   }, [dispatch]);
 
-  if (loading) {
+  useEffect(() => {
+    reloadListings(); 
+  }, [reloadListings]); 
+
+  if (loading && availableListings.length === 0 && !swipedAll) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Recherche des missions...</Text>
       </SafeAreaView>
     );
   }
 
-  if (!availableListings || availableListings.length === 0 || swipedAll) {
+  if (swipedAll || (!loading && availableListings.length === 0)) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.emptyContainer}>
-          <Ionicons name="search-outline" size={80} color={colors.textTertiary} />
-          <Text style={styles.emptyText}>Aucune annonce disponible</Text>
-          <Text style={styles.emptySubText}>
-            Nous n'avons pas trouvé d'annonces correspondant à vos préférences pour le moment
-          </Text>
-        </View>
+      <SafeAreaView style={[styles.container, styles.centered]}>
+        <Ionicons name="sad-outline" size={80} color={colors.textTertiary} />
+        <Text style={styles.emptyText}>Aucune nouvelle annonce</Text>
+        <Text style={styles.emptySubText}>Revenez plus tard ou ajustez vos préférences.</Text>
+        <Button title="Recharger" onPress={reloadListings} style={{ marginTop: spacing.lg }} />
       </SafeAreaView>
     );
+  }
+
+  const renderCards = () => {
+      return availableListings
+          .map((listing, index) => {
+              if (index < currentIndex) return null; 
+              if (index > currentIndex + 1) return null; 
+
+              const isCurrentCard = index === currentIndex;
+              const panHandlers = isCurrentCard ? panResponder.panHandlers : {};
+              const cardStyle = isCurrentCard
+                  ? { transform: [...position.getTranslateTransform(), { rotate }] }
+                  : { transform: [{ scale: nextCardScale }], opacity: 0.8 }; 
+
+              return (
+                  <Animated.View
+                      key={listing.id || `listing-${index}`}
+                      style={[styles.card, cardStyle]}
+                      {...panHandlers}
+                  >
+                      <ListingSwipeCard listing={listing} />
+                      {isCurrentCard && (
+                          <>
+                              <Animated.View style={[styles.overlayLabel, styles.likeContainer, { opacity: likeOpacity }]}><Text style={styles.likeText}>POSTULER</Text></Animated.View>
+                              <Animated.View style={[styles.overlayLabel, styles.dislikeContainer, { opacity: dislikeOpacity }]}><Text style={styles.dislikeText}>PASSER</Text></Animated.View>
+                          </>
+                      )}
+                  </Animated.View>
+              );
+          }).reverse(); 
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Recherche</Text>
-        <Text style={styles.subtitle}>
-          Faites glisser les annonces pour postuler ou passer
-        </Text>
-      </View>
-
       <View style={styles.cardsContainer}>
-        {availableListings
-          .slice(currentIndex, currentIndex + 2)
-          .reverse()
-          .map((listing, index) => {
-            const isCurrentCard = index === availableListings.slice(currentIndex, currentIndex + 2).length - 1;
-            const panHandlers = isCurrentCard ? panResponder.panHandlers : {};
-            
-            const cardStyle = isCurrentCard
-              ? {
-                  transform: [
-                    { translateX: position.x },
-                    { translateY: position.y },
-                    { rotate },
-                  ],
-                }
-              : { transform: [{ scale: nextCardScale }] };
-
-            return (
-              <Animated.View
-                key={listing.id}
-                style={[styles.card, cardStyle]}
-                {...panHandlers}
-              >
-                <ListingSwipeCard listing={listing} />
-                {isCurrentCard && (
-                  <>
-                    <Animated.View
-                      style={[
-                        styles.likeContainer,
-                        { opacity: likeOpacity },
-                      ]}
-                    >
-                      <Text style={styles.likeText}>POSTULER</Text>
-                    </Animated.View>
-                    <Animated.View
-                      style={[
-                        styles.dislikeContainer,
-                        { opacity: dislikeOpacity },
-                      ]}
-                    >
-                      <Text style={styles.dislikeText}>PASSER</Text>
-                    </Animated.View>
-                  </>
-                )}
-              </Animated.View>
-            );
-          })}
+          {renderCards()}
       </View>
-
-      <View style={styles.actionsContainer}>
-        <View style={styles.actionButton}>
-          <Ionicons
-            name="close-circle"
-            size={64}
-            color={colors.error}
-            onPress={() => handleSwipe('left')}
-          />
-        </View>
-        <View style={styles.actionButton}>
-          <Ionicons
-            name="checkmark-circle"
-            size={64}
-            color={colors.success}
-            onPress={() => handleSwipe('right')}
-          />
-        </View>
-      </View>
+       <View style={styles.actionsContainer}>
+         <TouchableOpacity style={styles.actionButton} onPress={() => handleSwipe('left')} disabled={currentIndex >= availableListings.length || !availableListings[currentIndex]?.id}>
+           <Ionicons name="close-circle" size={64} color={colors.error || 'red'} />
+         </TouchableOpacity>
+         <TouchableOpacity style={styles.actionButton} onPress={() => handleSwipe('right')} disabled={currentIndex >= availableListings.length || !availableListings[currentIndex]?.id}>
+           <Ionicons name="checkmark-circle" size={64} color={colors.success || 'green'} />
+         </TouchableOpacity>
+       </View>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  title: {
-    ...typography.h1,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  cardsContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.sm,
-  },
-  card: {
-    position: 'absolute',
-    width: '100%',
-  },
-  likeContainer: {
-    position: 'absolute',
-    top: 50,
-    right: 40,
-    transform: [{ rotate: '30deg' }],
-    borderWidth: 4,
-    borderRadius: 8,
-    padding: spacing.sm,
-    borderColor: colors.success,
-  },
-  dislikeContainer: {
-    position: 'absolute',
-    top: 50,
-    left: 40,
-    transform: [{ rotate: '-30deg' }],
-    borderWidth: 4,
-    borderRadius: 8,
-    padding: spacing.sm,
-    borderColor: colors.error,
-  },
-  likeText: {
-    ...typography.h3,
-    color: colors.success,
-    fontWeight: 'bold',
-  },
-  dislikeText: {
-    ...typography.h3,
-    color: colors.error,
-    fontWeight: 'bold',
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    padding: spacing.md,
-  },
-  actionButton: {
-    backgroundColor: colors.backgroundAlt,
-    borderRadius: 50,
-    padding: spacing.xs,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  emptyText: {
-    ...typography.h2,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  emptySubText: {
-    ...typography.body,
-    textAlign: 'center',
-    color: colors.textSecondary,
-  },
-});
+// Styles restaurés
+let styles = {};
+try {
+    styles = StyleSheet.create({
+      container: { flex: 1, backgroundColor: colors.background || '#f8f9fa' },
+      centered: { flex: 1, justifyContent:'center', alignItems:'center' },
+      loadingText: { marginTop: spacing.md || 15, color: colors.textSecondary || 'grey' },
+      header: { padding: spacing.md || 15, borderBottomWidth: 1, borderBottomColor: colors.border || '#eee' },
+      title: { ...typography.h1 },
+      subtitle: { ...typography.body, color: colors.textSecondary },
+      cardsContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.sm || 8 },
+      card: { position: 'absolute' }, // La taille est déterminée par ListingSwipeCard
+      overlayLabel: { position: 'absolute', top: 50, borderWidth: 4, borderRadius: 8, padding: spacing.sm || 8, backgroundColor: 'rgba(255,255,255,0.8)' },
+      likeContainer: { right: 40, transform: [{ rotate: '30deg' }], borderColor: colors.success || 'green' },
+      dislikeContainer: { left: 40, transform: [{ rotate: '-30deg' }], borderColor: colors.error || 'red' },
+      likeText: { ...(typography.h3 || {fontSize: 18}), color: colors.success || 'green', fontWeight: 'bold' }, // Fallback typo
+      dislikeText: { ...(typography.h3 || {fontSize: 18}), color: colors.error || 'red', fontWeight: 'bold' }, // Fallback typo
+      actionsContainer: { flexDirection: 'row', justifyContent: 'space-evenly', padding: spacing.md || 15, paddingBottom: spacing.lg || 24 }, // Ajouter paddingBottom
+      actionButton: { backgroundColor: 'transparent' }, 
+      emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl || 30 },
+      emptyText: { ...(typography.h2 || {fontSize: 20}), marginTop: spacing.lg || 24, marginBottom: spacing.md || 16, textAlign: 'center' }, // Fallback typo
+      emptySubText: { ...(typography.body || {fontSize: 16}), textAlign: 'center', color: colors.textSecondary || 'grey' }, // Fallback typo
+    });
+} catch(e) {
+    console.error("Style error SearchScreen:", e);
+    // Fallback Styles restaurés
+    styles = StyleSheet.create({ 
+        container:{flex:1}, 
+        centered:{flex:1, alignItems:'center', justifyContent:'center'}, 
+        loadingText:{marginTop: 15, color:'grey'}, 
+        header:{padding: 15}, 
+        title:{fontSize: 24, fontWeight:'bold'}, 
+        subtitle:{fontSize: 16, color:'grey'}, 
+        cardsContainer:{flex:1, alignItems:'center', justifyContent:'center', padding: 8}, 
+        card:{position:'absolute'}, 
+        overlayLabel:{position:'absolute', top:50, borderWidth:4, borderRadius:8, padding:8}, 
+        likeContainer:{right:40, transform: [{ rotate: '30deg' }], borderColor: 'green'}, 
+        dislikeContainer:{left:40, transform: [{ rotate: '-30deg' }], borderColor: 'red'}, 
+        likeText:{fontSize: 18, color: 'green', fontWeight: 'bold'}, 
+        dislikeText:{fontSize: 18, color: 'red', fontWeight: 'bold'}, 
+        actionsContainer:{flexDirection:'row', justifyContent:'space-evenly', padding: 15, paddingBottom: 24}, 
+        actionButton:{backgroundColor: 'transparent'}, 
+        emptyContainer:{flex:1, justifyContent:'center', alignItems:'center', padding: 30}, 
+        emptyText:{fontSize:20, marginTop:24, marginBottom:16, textAlign:'center'}, 
+        emptySubText:{fontSize:16, textAlign:'center', color:'grey'} 
+    });
+}
 
 export default SearchScreen;

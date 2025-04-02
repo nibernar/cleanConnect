@@ -1,4 +1,5 @@
-import { apiService } from './apiService';
+// Correction: Importer 'api' depuis './api'
+import api from './api'; 
 
 /**
  * Service for messaging related API calls
@@ -10,7 +11,8 @@ const messageService = {
    * @returns {Promise<Object>} Paginated conversations
    */
   getConversations: async (params = {}) => {
-    return await apiService.get('/messages/conversations', params);
+    // Correction: Utiliser api.get
+    return await api.get('/messages/conversations', params);
   },
 
   /**
@@ -20,7 +22,8 @@ const messageService = {
    * @returns {Promise<Object>} Conversation with messages
    */
   getConversation: async (id, params = {}) => {
-    return await apiService.get(`/messages/conversations/${id}`, params);
+    // Correction: Utiliser api.get
+    return await api.get(`/messages/conversations/${id}`, params);
   },
 
   /**
@@ -29,7 +32,8 @@ const messageService = {
    * @returns {Promise<Object>} Conversation data
    */
   getOrCreateConversation: async (userId) => {
-    return await apiService.post('/messages/conversations', { userId });
+    // Correction: Utiliser api.post
+    return await api.post('/messages/conversations', { userId });
   },
 
   /**
@@ -39,7 +43,8 @@ const messageService = {
    * @returns {Promise<Object>} Created message
    */
   sendMessage: async (conversationId, messageData) => {
-    return await apiService.post(`/messages/conversations/${conversationId}`, messageData);
+    // Correction: Utiliser api.post
+    return await api.post(`/messages/conversations/${conversationId}`, messageData);
   },
 
   /**
@@ -48,7 +53,8 @@ const messageService = {
    * @returns {Promise<Object>} Updated conversation
    */
   markConversationAsRead: async (conversationId) => {
-    return await apiService.patch(`/messages/conversations/${conversationId}/read`);
+    // Correction: Utiliser api.patch
+    return await api.patch(`/messages/conversations/${conversationId}/read`);
   },
 
   /**
@@ -56,7 +62,8 @@ const messageService = {
    * @returns {Promise<Object>} Count of unread messages
    */
   getUnreadCount: async () => {
-    return await apiService.get('/messages/unread-count');
+     // Correction: Utiliser api.get
+    return await api.get('/messages/unread-count');
   },
 
   /**
@@ -65,7 +72,8 @@ const messageService = {
    * @returns {Promise<Object>} Conversation data
    */
   getBookingConversation: async (bookingId) => {
-    return await apiService.get(`/messages/booking/${bookingId}`);
+    // Correction: Utiliser api.get
+    return await api.get(`/messages/booking/${bookingId}`);
   },
 
   /**
@@ -86,8 +94,8 @@ const messageService = {
         name: 'attachment.jpg'
       });
     }
-    
-    return await apiService.upload(`/messages/conversations/${conversationId}/attachment`, formData);
+    // Correction: Utiliser api.upload
+    return await api.upload(`/messages/conversations/${conversationId}/attachment`, formData);
   }
 };
 

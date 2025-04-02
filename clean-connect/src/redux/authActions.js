@@ -1,164 +1,100 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getStorageItem, setStorageItem, removeStorageItem } from '../utils/storageUtils';
 import authService from '../services/authService';
-import { apiService } from '../services/apiService';
-import { router } from 'expo-router';
-import { syncUserWithAuth } from './slices/userSlice';
+import { api } from '../services/api'; 
+// import { router } from 'expo-router'; // La redirection est gérée par le layout
+// Correction: Retirer l'import de syncUserWithAuth
+// import { syncUserWithAuth } from './slices/userSlice';
 import { determineUserType } from '../utils/userTypeDetector';
-import { redirectBasedOnAuth } from '../utils/routingService';
+import { AUTH_ACTION_TYPES } from './actionTypes'; 
 
-// Définition des types d'actions pour être utilisés à la fois dans authSlice et authActions
-export const AUTH_ACTION_TYPES = {
-  LOGIN: 'auth/login',
-  REGISTER_HOST: 'auth/registerHost',
-  REGISTER_CLEANER: 'auth/registerCleaner',
-  LOGOUT: 'auth/logout',
-  RESTORE_SESSION: 'auth/restoreSession',
-  VERIFY_EMAIL: 'auth/verifyEmail',
-  REQUEST_PASSWORD_RESET: 'auth/requestPasswordReset',
-  RESET_PASSWORD: 'auth/resetPassword',
-};
-
-// Actions asynchrones
 export const login = createAsyncThunk(
   AUTH_ACTION_TYPES.LOGIN,
-  async ({ email, password }, { rejectWithValue, dispatch, getState }) => {
+  async ({ email, password }, { rejectWithValue, getState }) => { // Retiré dispatch des params
     try {
       console.log('[AuthAction] Tentative de connexion avec email:', email);
       const response = await authService.login(email, password);
       console.log('[AuthAction] Connexion réussie, réponse:', response);
       
-      // Stocker le token dans AsyncStorage
       await setStorageItem('token', response.token);
+      api.setAuthToken(response.token);
       
-      // Configurer explicitement le token d'authentification
-      apiService.setAuthToken(response.token);
-      
-      // S'assurer que le userType est défini
+      // Préparer les données user pour le state auth (le middleware s'occupera de userSlice)
       let userData = response.user || {};
-      
-      // Utiliser la fonction centralisée pour déterminer le type d'utilisateur
       if (!userData.userType) {
         console.log('[AuthAction] userType non défini, tentative de déduction...');
-        
-        // Vérifier s'il existe d'autres indicateurs pour déterminer le type
-        const state = getState();
+        const state = getState(); // Obtenir l'état *avant* la mise à jour auth
         const detectedType = determineUserType(userData, state, 'authActions.login');
-        
-        if (detectedType) {
-          userData.userType = detectedType;
-          console.log(`[AuthAction] Type utilisateur déduit: ${detectedType}`);
-        }
+        if (detectedType) userData.userType = detectedType;
+        if(userData.userType) console.log(`[AuthAction] Type utilisateur déduit: ${userData.userType}`);
       }
       
-      // Synchroniser les données utilisateur avec userSlice
-      dispatch(syncUserWithAuth(userData));
+      // Correction: Ne PAS dispatcher syncUserWithAuth ici
+      // dispatch(syncUserWithAuth(userData)); 
       
-      // Redirection intelligente basée sur le type utilisateur
-      redirectBasedOnAuth(true, userData);
-      
-      return { ...response, user: userData };
+      // Retourner les données pour mettre à jour authSlice
+      return { token: response.token, user: userData }; 
     } catch (error) {
       console.error('[AuthAction] Login error:', error);
-      return rejectWithValue(
-        error.message || 'Échec de connexion. Vérifiez vos identifiants.'
-      );
+      const message = error.response?.data?.error || error.message || 'Échec de connexion. Vérifiez vos identifiants.';
+      return rejectWithValue(message);
     }
   }
 );
 
 export const registerHost = createAsyncThunk(
   AUTH_ACTION_TYPES.REGISTER_HOST,
-  async (userData, { rejectWithValue, dispatch }) => {
+  async (userData, { rejectWithValue }) => { // Retiré dispatch
     try {
-      console.log('[AuthAction] RegisterHost action appelée avec:', userData);
+      console.log('[AuthAction] RegisterHost action...');
       const response = await authService.registerHost(userData);
-      console.log('[AuthAction] RegisterHost réponse:', response);
-      
       await setStorageItem('token', response.token);
-      
-      // Configurer explicitement le token d'authentification
-      apiService.setAuthToken(response.token);
-      
-      // S'assurer que le userType est défini
-      const userDataWithType = {
-        ...response.user,
-        userType: 'host' // Forcer le type pour les nouveaux hosts
-      };
-      
-      // Synchroniser les données utilisateur avec userSlice
-      dispatch(syncUserWithAuth(userDataWithType));
-      
-      // Redirection intelligente vers le dashboard host
-      router.replace('/host/dashboard');
-      
-      return { ...response, user: userDataWithType };
+      api.setAuthToken(response.token);
+      const userDataWithType = { ...response.user, userType: 'host' };
+      // Correction: Ne PAS dispatcher syncUserWithAuth ici
+      // dispatch(syncUserWithAuth(userDataWithType));
+      return { token: response.token, user: userDataWithType };
     } catch (error) {
-      console.error('[AuthAction] RegisterHost error:', error);
-      return rejectWithValue(
-        error.message || 'Échec d\'inscription. Veuillez réessayer.'
-      );
+      // ... gestion erreur ...
+       const message = error.response?.data?.error || error.message || 'Échec d\'inscription.';
+       return rejectWithValue(message);
     }
   }
 );
 
 export const registerCleaner = createAsyncThunk(
   AUTH_ACTION_TYPES.REGISTER_CLEANER,
-  async (userData, { rejectWithValue, dispatch }) => {
+  async (userData, { rejectWithValue }) => { // Retiré dispatch
     try {
-      console.log('[AuthAction] RegisterCleaner action appelée avec:', userData);
+      console.log('[AuthAction] RegisterCleaner action...');
       const response = await authService.registerCleaner(userData);
-      console.log('[AuthAction] RegisterCleaner réponse:', response);
-      
       await setStorageItem('token', response.token);
-      
-      // Configurer explicitement le token d'authentification
-      apiService.setAuthToken(response.token);
-      
-      // S'assurer que le userType est défini
-      const userDataWithType = {
-        ...response.user,
-        userType: 'cleaner' // Forcer le type pour les nouveaux cleaners
-      };
-      
-      // Synchroniser les données utilisateur avec userSlice
-      dispatch(syncUserWithAuth(userDataWithType));
-      
-      // Redirection intelligente vers le dashboard cleaner
-      router.replace('/cleaner/dashboard');
-      
-      return { ...response, user: userDataWithType };
+      api.setAuthToken(response.token);
+      const userDataWithType = { ...response.user, userType: 'cleaner' };
+       // Correction: Ne PAS dispatcher syncUserWithAuth ici
+      // dispatch(syncUserWithAuth(userDataWithType));
+      return { token: response.token, user: userDataWithType };
     } catch (error) {
-      console.error('[AuthAction] RegisterCleaner error:', error);
-      return rejectWithValue(
-        error.message || 'Échec d\'inscription. Veuillez réessayer.'
-      );
+       // ... gestion erreur ...
+       const message = error.response?.data?.error || error.message || 'Échec d\'inscription.';
+       return rejectWithValue(message);
     }
   }
 );
 
 export const logout = createAsyncThunk(
   AUTH_ACTION_TYPES.LOGOUT,
-  async (_, { rejectWithValue, dispatch }) => {
+  async (_, { rejectWithValue }) => { // Retiré dispatch
     try {
       console.log('[AuthAction] Déconnexion...');
-      
-      // Supprimer les tokens de storage
       await removeStorageItem('token');
       await removeStorageItem('refreshToken');
-      
-      // Nettoyer le token dans les headers
-      apiService.setAuthToken(null);
-      
-      // Réinitialiser également les données utilisateur dans userSlice
-      dispatch(syncUserWithAuth(null));
-      
-      // Redirection après déconnexion
-      router.replace('/(auth)/');
-      
+      api.setAuthToken(null);
+      // Correction: Ne PAS dispatcher syncUserWithAuth ici (géré par extraReducer)
+      // dispatch(syncUserWithAuth(null)); 
       return null;
     } catch (error) {
-      console.error('[AuthAction] Logout error:', error);
+      // ... gestion erreur ...
       return rejectWithValue('Échec de déconnexion');
     }
   }
@@ -166,115 +102,33 @@ export const logout = createAsyncThunk(
 
 export const restoreSession = createAsyncThunk(
   AUTH_ACTION_TYPES.RESTORE_SESSION,
-  async (_, { rejectWithValue, dispatch, getState }) => {
+  async (_, { rejectWithValue, getState }) => { // Retiré dispatch
     try {
-      console.log('[AuthAction] Tentative de restauration de session...');
+      console.log('[AuthAction] Tentative de restauration...');
       const token = await getStorageItem('token');
-      
-      if (!token) {
-        console.log('[AuthAction] Pas de token trouvé lors de la restauration de session');
-        return rejectWithValue('No token found');
-      }
-      
-      console.log('[AuthAction] Token trouvé, configuration du token dans les headers...');
-      
-      // Configuration explicite du token pour les requêtes suivantes
-      apiService.setAuthToken(token);
-      
-      console.log('[AuthAction] Récupération des données utilisateur...');
-      const userResponse = await authService.getCurrentUser();
-      
-      if (!userResponse || !userResponse.success) {
-        console.error('[AuthAction] Réponse d\'API invalide:', userResponse);
-        throw new Error('Réponse d\'API invalide');
-      }
-      
-      // Extraire les données correctement de la réponse de l'API
+      if (!token) return rejectWithValue('No token found');
+      api.setAuthToken(token);
+      const userResponse = await authService.getCurrentUser(); 
+      if (!userResponse || !userResponse.success) throw new Error('API response invalid');
       let userData = userResponse.data || {};
-      console.log('[AuthAction] Données utilisateur récupérées avec succès:', userData);
-      
-      // Vérifier si userType est défini, sinon le déduire avec la fonction centralisée
       if (!userData.userType) {
-        console.log('[AuthAction] userType non défini, tentative de déduction...');
-        
-        // Récupérer l'état actuel
-        const state = getState();
-        const detectedType = determineUserType(userData, state, 'authActions.restoreSession');
-        
-        if (detectedType) {
-          userData.userType = detectedType;
-          console.log(`[AuthAction] Type utilisateur déduit: ${detectedType}`);
-        } else {
-          console.log('[AuthAction] Impossible de déduire le type utilisateur');
-        }
+          const state = getState();
+          const detectedType = determineUserType(userData, state, 'authActions.restoreSession');
+          if (detectedType) userData.userType = detectedType;
       }
-      
-      // Synchroniser les données utilisateur avec userSlice
-      dispatch(syncUserWithAuth(userData));
-      
+      // Correction: Ne PAS dispatcher syncUserWithAuth ici
+      // dispatch(syncUserWithAuth(userData)); 
       return { token, user: userData };
     } catch (error) {
-      console.error('[AuthAction] Erreur lors de la restauration de session:', error);
-      
-      // En cas d'erreur, nettoyer les tokens et forcer la déconnexion
+      // ... gestion erreur ...
       await removeStorageItem('token');
       await removeStorageItem('refreshToken');
-      apiService.setAuthToken(null);
-      
-      return rejectWithValue(
-        error.message || 'Session invalide ou expirée'
-      );
+      api.setAuthToken(null);
+      return rejectWithValue(error.message || 'Session invalide');
     }
   }
 );
 
-export const verifyEmail = createAsyncThunk(
-  AUTH_ACTION_TYPES.VERIFY_EMAIL,
-  async (verificationToken, { rejectWithValue }) => {
-    try {
-      console.log('[AuthAction] Vérification email avec token:', verificationToken);
-      const response = await authService.verifyEmail(verificationToken);
-      console.log('[AuthAction] Résultat vérification email:', response);
-      return response;
-    } catch (error) {
-      console.error('[AuthAction] Erreur vérification email:', error);
-      return rejectWithValue(
-        error.message || 'Échec de vérification d\'email'
-      );
-    }
-  }
-);
-
-export const requestPasswordReset = createAsyncThunk(
-  AUTH_ACTION_TYPES.REQUEST_PASSWORD_RESET,
-  async (email, { rejectWithValue }) => {
-    try {
-      console.log('[AuthAction] Demande de réinitialisation pour:', email);
-      const response = await authService.requestPasswordReset(email);
-      console.log('[AuthAction] Demande envoyée avec succès');
-      return response;
-    } catch (error) {
-      console.error('[AuthAction] Erreur demande réinitialisation:', error);
-      return rejectWithValue(
-        error.message || 'Échec de demande de réinitialisation'
-      );
-    }
-  }
-);
-
-export const resetPassword = createAsyncThunk(
-  AUTH_ACTION_TYPES.RESET_PASSWORD,
-  async ({ token, newPassword }, { rejectWithValue }) => {
-    try {
-      console.log('[AuthAction] Réinitialisation mot de passe avec token');
-      const response = await authService.resetPassword(token, newPassword);
-      console.log('[AuthAction] Mot de passe réinitialisé avec succès');
-      return response;
-    } catch (error) {
-      console.error('[AuthAction] Erreur réinitialisation mot de passe:', error);
-      return rejectWithValue(
-        error.message || 'Échec de réinitialisation de mot de passe'
-      );
-    }
-  }
-);
+export const verifyEmail = createAsyncThunk(AUTH_ACTION_TYPES.VERIFY_EMAIL, async (t, { rejectWithValue }) => { try { return await authService.verifyEmail(t); } catch (e) { return rejectWithValue(e.message); } });
+export const requestPasswordReset = createAsyncThunk(AUTH_ACTION_TYPES.REQUEST_PASSWORD_RESET, async (e, { rejectWithValue }) => { try { return await authService.requestPasswordReset(e); } catch (e) { return rejectWithValue(e.message); } });
+export const resetPassword = createAsyncThunk(AUTH_ACTION_TYPES.RESET_PASSWORD, async ({ t, p }, { rejectWithValue }) => { try { return await authService.resetPassword(t, p); } catch (e) { return rejectWithValue(e.message); } });

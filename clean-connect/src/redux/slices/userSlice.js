@@ -1,400 +1,190 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import userService from '../../services/userService';
-import { logout } from '../authActions';
+import { api } from '../../services/api'; 
+import { AUTH_ACTION_TYPES, USER_SYNC_ACTION_TYPE } from '../actionTypes'; 
 
-// Async thunks
+// --- Définitions complètes des Thunks --- 
 export const fetchProfile = createAsyncThunk(
-  'user/fetchProfile',
+  'user/fetchProfile', 
   async (_, { rejectWithValue, getState, dispatch }) => {
     try {
       console.log('🔄 Fetching user profile from API...');
-      
-      // Get the current authentication state
-      const { auth } = getState();
-      console.log(`🔐 Auth state when fetching profile: Token exists: ${!!auth.token}, User authenticated: ${!!auth.isAuthenticated}`);
-      
-      const response = await userService.getProfile();
+      const response = await api.get('/users/profile'); 
       console.log('✅ Profile fetched successfully:', response);
-      
-      // Vérifier et compléter les données utilisateur si nécessaire
-      let userData = response.data || response;
-      
-      // AMÉLIORATION: S'assurer que le userType est défini
-      if (!userData.userType) {
-        console.log('🔍 userType manquant dans les données du profil, tentative de déduction...');
-        
-        // Vérifier s'il existe d'autres indicateurs pour déterminer le type
-        // Essayer de déduire à partir des autres propriétés
-        if (userData.cleanerId || userData.cleaner) {
-          userData.userType = 'cleaner';
-          console.log('🧹 Type utilisateur déduit: cleaner');
-          
-          // Essayer de récupérer plus d'informations sur le profil cleaner
-          try {
-            const cleanerProfile = await userService.getCleanerProfile();
-            console.log('✅ Profil cleaner récupéré avec succès');
-            // Fusionner les données du profil cleaner avec le profil utilisateur
-            userData = { ...userData, ...cleanerProfile, userType: 'cleaner' };
-          } catch (error) {
-            console.error('❌ Erreur lors de la récupération du profil cleaner:', error);
-          }
-        } 
-        else if (userData.hostId || userData.host) {
-          userData.userType = 'host';
-          console.log('🏠 Type utilisateur déduit: host');
-          
-          // Essayer de récupérer plus d'informations sur le profil host
-          try {
-            const hostProfile = await userService.getHostProfile();
-            console.log('✅ Profil host récupéré avec succès');
-            // Fusionner les données du profil host avec le profil utilisateur
-            userData = { ...userData, ...hostProfile, userType: 'host' };
-          } catch (error) {
-            console.error('❌ Erreur lors de la récupération du profil host:', error);
-          }
-        }
-        // Vérifier la présence d'un rôle
-        else if (userData.role) {
-          userData.userType = userData.role;
-          console.log(`👤 Type utilisateur basé sur rôle: ${userData.role}`);
-        }
-        // En dernier recours, vérifier l'ID utilisateur (basé sur les logs)
-        else if (userData.id === "67d7e3c0bb0d7c067b427892") {
-          userData.userType = 'cleaner';
-          console.log('🆔 Type utilisateur déduit basé sur ID: cleaner');
-        }
-        else {
-          console.log('⚠️ Impossible de déduire le type d\'utilisateur');
-        }
-        
-        // Mettre à jour les données auth également
-        if (userData.userType && auth.user) {
-          // Créer une version mise à jour de l'utilisateur auth avec le type détecté
-          const updatedAuthUser = { ...auth.user, userType: userData.userType };
-          
-          // Dispatcher une action pour mettre à jour authSlice si nécessaire
-          // Cette action devrait être définie dans authSlice
-          // Ou vous pouvez synchroniser manuellement plus tard
-          console.log('🔄 Type utilisateur détecté, mise à jour de authSlice recommandée:', userData.userType);
-        }
+      let userData = response.data || response; 
+      if (!userData?.success && response?.success) userData = response.data;
+      if (!userData?.userType) {
+        console.log('🔍 userType manquant, tentative de déduction...');
+        if (userData.cleanerId || userData.cleaner) userData.userType = 'cleaner';
+        else if (userData.hostId || userData.host) userData.userType = 'host';
+        else if (userData.role) userData.userType = userData.role;
+        else console.log('⚠️ Impossible de déduire le type');
+        if(userData.userType) console.log(`👤 Type utilisateur déterminé: ${userData.userType}`);
       }
-      
       return userData;
     } catch (error) {
       console.error('❌ Profile fetch error:', error.response?.data || error.message);
-      return rejectWithValue(
-        error.response?.data?.message || 'Échec de récupération du profil'
-      );
+      return rejectWithValue(error.response?.data?.message || 'Échec récupération profil');
     }
   }
 );
 
 export const updateProfile = createAsyncThunk(
   'user/updateProfile',
-  async (profileData, { rejectWithValue }) => {
+   async (profileData, { rejectWithValue }) => {
     try {
       console.log('🔄 Updating user profile with data:', profileData);
       const response = await userService.updateProfile(profileData);
       console.log('✅ Profile updated successfully:', response);
-      return response.data || response; // Handle both response formats
+      return response.data || response;
     } catch (error) {
       console.error('❌ Profile update error:', error.response?.data || error.message);
-      return rejectWithValue(
-        error.response?.data?.message || 'Échec de mise à jour du profil'
-      );
+      return rejectWithValue(error.response?.data?.message || 'Échec mise à jour profil');
     }
   }
 );
 
-export const updateProfilePicture = createAsyncThunk(
-  'user/updateProfilePicture',
-  async (imageFile, { rejectWithValue }) => {
+export const updateMyCleanerData = createAsyncThunk(
+  'user/updateMyCleanerData',
+  async (cleanerData, { rejectWithValue }) => {
     try {
-      const response = await userService.uploadProfilePicture(imageFile);
-      return response;
+      console.log('🔄 Updating cleaner specific data:', cleanerData);
+      const response = await userService.updateCleanerProfile(cleanerData);
+      console.log('✅ Cleaner data updated successfully:', response);
+      return response.data || response; 
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Échec de mise à jour de la photo de profil'
-      );
+      console.error('❌ Cleaner data update error:', error.response?.data || error.message);
+      return rejectWithValue(error.response?.data?.message || 'Échec mise à jour détails cleaner');
     }
   }
 );
 
-export const changePassword = createAsyncThunk(
-  'user/changePassword',
-  async ({ currentPassword, newPassword }, { rejectWithValue }) => {
-    try {
-      const response = await userService.updatePassword({
-        currentPassword,
-        newPassword
-      });
-      return response;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Échec de changement de mot de passe'
-      );
-    }
-  }
+export const updateProfilePicture = createAsyncThunk( 
+  'user/updateProfilePicture', 
+  async (imageFile, { rejectWithValue }) => { 
+    try { 
+      const response = await userService.uploadProfilePicture(imageFile); 
+      return response; 
+    } catch (error) { 
+      return rejectWithValue( error.response?.data?.message || 'Échec mise à jour photo profil' ); 
+    } 
+});
+
+export const changePassword = createAsyncThunk( 
+  'user/changePassword', 
+  async ({ currentPassword, newPassword }, { rejectWithValue }) => { 
+    try { 
+      const response = await userService.updatePassword({ currentPassword, newPassword }); 
+      return response; 
+    } catch (error) { 
+      return rejectWithValue( error.response?.data?.message || 'Échec changement mot de passe' ); 
+    } 
+  } 
 );
 
-export const fetchCleanerPreferences = createAsyncThunk(
-  'user/fetchCleanerPreferences',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await userService.getCleanerProfile();
-      return response;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Échec de récupération des préférences'
-      );
-    }
-  }
+export const fetchCleanerPreferences = createAsyncThunk( 
+  'user/fetchCleanerPreferences', 
+  async (_, { rejectWithValue }) => { 
+    try { 
+      const response = await userService.getCleanerProfile(); // getCleanerProfile renvoie tout le profil, y compris prefs?
+      return response.workPreferences || response.data?.workPreferences || null; // Extraire seulement les préférences
+    } catch (error) { 
+      return rejectWithValue( error.response?.data?.message || 'Échec récupération préférences' ); 
+    } 
+  } 
 );
 
-export const updateCleanerPreferences = createAsyncThunk(
-  'user/updateCleanerPreferences',
-  async (preferencesData, { rejectWithValue }) => {
-    try {
+export const updateCleanerPreferences = createAsyncThunk( 
+  'user/updateCleanerPreferences', 
+  async (preferencesData, { rejectWithValue }) => { 
+    try { 
       const response = await userService.updateCleanerPreferences(preferencesData);
-      return response;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Échec de mise à jour des préférences'
-      );
-    }
-  }
+      return response.data || response; // Renvoyer les préférences mises à jour
+    } catch (error) { 
+      return rejectWithValue( error.response?.data?.message || 'Échec mise à jour préférences' ); 
+    } 
+  } 
 );
 
-export const updateBankInfo = createAsyncThunk(
-  'user/updateBankInfo',
-  async (bankData, { rejectWithValue }) => {
-    try {
+export const updateBankInfo = createAsyncThunk( 
+  'user/updateBankInfo', 
+  async (bankData, { rejectWithValue }) => { 
+    try { 
       const response = await userService.updateBankingInfo(bankData);
-      return response;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Échec de mise à jour des informations bancaires'
-      );
-    }
-  }
+      return response.data || response; // Renvoyer les infos bancaires mises à jour
+    } catch (error) { 
+      return rejectWithValue( error.response?.data?.message || 'Échec mise à jour infos bancaires' ); 
+    } 
+  } 
 );
+// --- Fin Définitions Thunks --- 
 
 // Initial state
-const initialState = {
-  profile: null,
-  user: null, // Champ 'user' pour compatibilité avec les composants qui l'utilisent directement
-  preferences: null,
-  isLoading: false,
-  error: null,
-  updateStatus: null,
-  passwordChangeStatus: null,
-  loading: false, // For additional compatibility with components expecting this field
+const initialState = { profile: null, user: null, preferences: null, isLoading: false, error: null, updateStatus: null, passwordChangeStatus: null, loading: false };
+
+const syncLogic = (state, action) => {
+  if (action.payload === null) {
+    console.log('[userSlice] Syncing from Auth: Resetting state.');
+    Object.assign(state, initialState);
+  } else {
+    console.log('[userSlice] Syncing from Auth: Updating user data.', action.payload);
+    state.profile = action.payload;
+    state.user = action.payload;
+    state.isLoading = false; state.loading = false; state.error = null;
+  }
 };
 
-// Slice
 const userSlice = createSlice({
   name: 'user',
   initialState,
-  reducers: {
-    clearUserError: (state) => {
-      state.error = null;
-    },
-    clearUpdateStatus: (state) => {
-      state.updateStatus = null;
-    },
-    clearPasswordChangeStatus: (state) => {
-      state.passwordChangeStatus = null;
-    },
-    // Action critique pour synchroniser avec auth
-    syncUserWithAuth: (state, action) => {
-      if (action.payload === null) {
-        // Si payload est null, on réinitialise l'état (cas de déconnexion)
-        console.log('🔄 Resetting user state during logout/auth reset');
-        return initialState;
-      } else {
-        // Sinon on met à jour les données utilisateur
-        console.log('🔄 Synchronizing user data from auth:', action.payload);
-        state.profile = action.payload;
-        state.user = action.payload; // Pour compatibilité avec les composants attendant user.user
+  reducers: { 
+      clearUserError: (state) => { state.error = null; },
+      clearUpdateStatus: (state) => { state.updateStatus = null; },
+      clearPasswordChangeStatus: (state) => { state.passwordChangeStatus = null; },
+      updateSettings: (state, action) => {
+        if (state.profile) { state.profile.settings = { ...state.profile.settings, ...action.payload }; }
+        if (state.user) { state.user.settings = { ...state.user.settings, ...action.payload }; }
       }
-    },
-    // Nouvelle action pour la déconnexion explicite depuis userSlice
-    logoutUser: () => {
-      console.log('🔄 Explicit logout from userSlice');
-      return initialState;
-    },
-    updateSettings: (state, action) => {
-      if (state.profile) {
-        state.profile.settings = {
-          ...state.profile.settings,
-          ...action.payload
-        };
-        if (state.user) {
-          state.user.settings = {
-            ...state.user.settings,
-            ...action.payload
-          };
-        }
-      }
-    }
-  },
+   },
   extraReducers: (builder) => {
     builder
-      // Fetch profile
-      .addCase(fetchProfile.pending, (state) => {
-        state.isLoading = true;
-        state.loading = true; // For compatibility
-        state.error = null;
-        console.log('🔄 Fetch profile pending...');
+      .addCase(fetchProfile.pending, (state) => { state.isLoading = true; state.loading = true; state.error = null; })
+      .addCase(fetchProfile.fulfilled, (state, action) => { state.isLoading = false; state.loading = false; state.profile = action.payload; state.user = action.payload; })
+      .addCase(fetchProfile.rejected, (state, action) => { state.isLoading = false; state.loading = false; state.error = action.payload; })
+      .addCase(updateProfile.pending, (state) => { state.isLoading = true; state.loading = true; state.error = null; state.updateStatus = 'pending'; })
+      .addCase(updateProfile.fulfilled, (state, action) => { state.isLoading = false; state.loading = false; state.profile = action.payload; state.user = action.payload; state.updateStatus = 'success'; })
+      .addCase(updateProfile.rejected, (state, action) => { state.isLoading = false; state.loading = false; state.error = action.payload; state.updateStatus = 'failed'; })
+      .addCase(updateMyCleanerData.pending, (state) => { state.isLoading = true; state.loading = true; state.error = null; state.updateStatus = 'pending'; })
+      .addCase(updateMyCleanerData.fulfilled, (state, action) => { state.isLoading = false; state.loading = false; if (state.profile && action.payload) { state.profile = { ...state.profile, ...action.payload }; } if (state.user && action.payload) { state.user = { ...state.user, ...action.payload }; } state.updateStatus = 'success'; })
+      .addCase(updateMyCleanerData.rejected, (state, action) => { state.isLoading = false; state.loading = false; state.error = action.payload; state.updateStatus = 'failed'; })
+      .addCase(updateProfilePicture.pending, (state) => { state.isLoading = true; state.loading = true; state.error = null; state.updateStatus = 'pending'; })
+      .addCase(updateProfilePicture.fulfilled, (state, action) => { 
+          state.isLoading = false; state.loading = false; state.updateStatus = 'success'; 
+          if (state.profile && action.payload?.profileImage) state.profile.profileImage = action.payload.profileImage;
+          if (state.user && action.payload?.profileImage) state.user.profileImage = action.payload.profileImage;
+       })
+      .addCase(updateProfilePicture.rejected, (state, action) => { state.isLoading = false; state.loading = false; state.error = action.payload; state.updateStatus = 'failed'; })
+      .addCase(changePassword.pending, (state) => { state.isLoading = true; state.loading = true; state.error = null; state.passwordChangeStatus = 'pending'; })
+      .addCase(changePassword.fulfilled, (state) => { state.isLoading = false; state.loading = false; state.passwordChangeStatus = 'success'; })
+      .addCase(changePassword.rejected, (state, action) => { state.isLoading = false; state.loading = false; state.error = action.payload; state.passwordChangeStatus = 'failed'; })
+      .addCase(fetchCleanerPreferences.pending, (state) => { state.isLoading = true; state.loading = true; state.error = null; })
+      .addCase(fetchCleanerPreferences.fulfilled, (state, action) => { state.isLoading = false; state.loading = false; state.preferences = action.payload; })
+      .addCase(fetchCleanerPreferences.rejected, (state, action) => { state.isLoading = false; state.loading = false; state.error = action.payload; })
+      .addCase(updateCleanerPreferences.pending, (state) => { state.isLoading = true; state.loading = true; state.error = null; state.updateStatus = 'pending'; })
+      .addCase(updateCleanerPreferences.fulfilled, (state, action) => { state.isLoading = false; state.loading = false; state.preferences = action.payload; state.updateStatus = 'success'; })
+      .addCase(updateCleanerPreferences.rejected, (state, action) => { state.isLoading = false; state.loading = false; state.error = action.payload; state.updateStatus = 'failed'; })
+      .addCase(updateBankInfo.pending, (state) => { state.isLoading = true; state.loading = true; state.error = null; state.updateStatus = 'pending'; })
+      .addCase(updateBankInfo.fulfilled, (state, action) => { 
+          state.isLoading = false; state.loading = false; state.updateStatus = 'success';
+          if (state.profile && action.payload?.bankInfo) state.profile.bankInfo = action.payload.bankInfo;
+          if (state.user && action.payload?.bankInfo) state.user.bankInfo = action.payload.bankInfo;
+       })
+      .addCase(updateBankInfo.rejected, (state, action) => { state.isLoading = false; state.loading = false; state.error = action.payload; state.updateStatus = 'failed'; })
+      .addCase(AUTH_ACTION_TYPES.LOGOUT + '/fulfilled', (state) => {
+          console.log('[userSlice] Resetting state due to logout.fulfilled action');
+          Object.assign(state, initialState);
       })
-      .addCase(fetchProfile.fulfilled, (state, action) => {
-        console.log('✅ Fetch profile fulfilled with data:', action.payload);
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        // Update both profile and user fields for consistency
-        state.profile = action.payload;
-        state.user = action.payload; // Synchroniser user pour la compatibilité
-      })
-      .addCase(fetchProfile.rejected, (state, action) => {
-        console.error('❌ Fetch profile rejected:', action.payload);
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.error = action.payload;
-      })
-      
-      // Update profile
-      .addCase(updateProfile.pending, (state) => {
-        state.isLoading = true;
-        state.loading = true; // For compatibility
-        state.error = null;
-        state.updateStatus = 'pending';
-      })
-      .addCase(updateProfile.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.profile = action.payload;
-        state.user = action.payload; // Synchroniser user pour la compatibilité
-        state.updateStatus = 'success';
-      })
-      .addCase(updateProfile.rejected, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.error = action.payload;
-        state.updateStatus = 'failed';
-      })
-      
-      // Update profile picture
-      .addCase(updateProfilePicture.pending, (state) => {
-        state.isLoading = true;
-        state.loading = true; // For compatibility
-        state.error = null;
-        state.updateStatus = 'pending';
-      })
-      .addCase(updateProfilePicture.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        if (state.profile) {
-          state.profile.profileImage = action.payload.profileImage;
-          // Synchroniser les données d'image pour user
-          if (state.user) {
-            state.user.profileImage = action.payload.profileImage;
-          }
-        }
-        state.updateStatus = 'success';
-      })
-      .addCase(updateProfilePicture.rejected, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.error = action.payload;
-        state.updateStatus = 'failed';
-      })
-      
-      // Change password
-      .addCase(changePassword.pending, (state) => {
-        state.isLoading = true;
-        state.loading = true; // For compatibility
-        state.error = null;
-        state.passwordChangeStatus = 'pending';
-      })
-      .addCase(changePassword.fulfilled, (state) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.passwordChangeStatus = 'success';
-      })
-      .addCase(changePassword.rejected, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.error = action.payload;
-        state.passwordChangeStatus = 'failed';
-      })
-      
-      // Fetch cleaner preferences
-      .addCase(fetchCleanerPreferences.pending, (state) => {
-        state.isLoading = true;
-        state.loading = true; // For compatibility
-        state.error = null;
-      })
-      .addCase(fetchCleanerPreferences.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.preferences = action.payload;
-      })
-      .addCase(fetchCleanerPreferences.rejected, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.error = action.payload;
-      })
-      
-      // Update cleaner preferences
-      .addCase(updateCleanerPreferences.pending, (state) => {
-        state.isLoading = true;
-        state.loading = true; // For compatibility
-        state.error = null;
-        state.updateStatus = 'pending';
-      })
-      .addCase(updateCleanerPreferences.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.preferences = action.payload;
-        state.updateStatus = 'success';
-      })
-      .addCase(updateCleanerPreferences.rejected, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.error = action.payload;
-        state.updateStatus = 'failed';
-      })
-      
-      // Update bank info
-      .addCase(updateBankInfo.pending, (state) => {
-        state.isLoading = true;
-        state.loading = true; // For compatibility
-        state.error = null;
-        state.updateStatus = 'pending';
-      })
-      .addCase(updateBankInfo.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        if (state.profile) {
-          state.profile.bankInfo = action.payload.bankInfo;
-          // Synchroniser les infos bancaires pour user
-          if (state.user) {
-            state.user.bankInfo = action.payload.bankInfo;
-          }
-        }
-        state.updateStatus = 'success';
-      })
-      .addCase(updateBankInfo.rejected, (state, action) => {
-        state.isLoading = false;
-        state.loading = false; // For compatibility
-        state.error = action.payload;
-        state.updateStatus = 'failed';
-      })
-      
-      // Réagir à l'action logout de authSlice
-      .addCase(logout.fulfilled, () => {
-        return initialState;
-      });
+      .addCase(USER_SYNC_ACTION_TYPE, syncLogic);
   }
 });
 
@@ -402,9 +192,16 @@ export const {
   clearUserError, 
   clearUpdateStatus, 
   clearPasswordChangeStatus,
-  syncUserWithAuth,
-  logoutUser,
   updateSettings
 } = userSlice.actions;
+
+// --- SÉLECTEURS --- 
+export const selectUser = (state) => state.user.user; 
+export const selectUserProfile = (state) => state.user.profile;
+export const selectUserLoading = (state) => state.user.isLoading || state.user.loading;
+export const selectUserError = (state) => state.user.error;
+export const selectUserUpdateStatus = (state) => state.user.updateStatus;
+export const selectPasswordChangeStatus = (state) => state.user.passwordChangeStatus;
+export const selectCleanerPreferences = (state) => state.user.preferences;
 
 export default userSlice.reducer;

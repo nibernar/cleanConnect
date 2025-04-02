@@ -1,109 +1,75 @@
-import { apiService } from './apiService';
+// Correction: Importer { api } et renommer
+import { api as apiInstance } from './api'; 
 
-/**
- * Service for listing related API calls
- */
+// Wrapper pour assurer que l'instance api est chargée
+const getApi = () => {
+    console.log("[getApi in listingService] Checking apiInstance. Is it defined?", !!apiInstance);
+    if (!apiInstance) {
+        console.error("API instance (listingService) requested before module fully loaded!");
+        try {
+            console.log("[getApi in listingService] Attempting dynamic require...");
+            const dynamicApi = require('./api').api;
+            console.log("[getApi in listingService] Dynamic require result:", typeof dynamicApi);
+            if(dynamicApi) return dynamicApi;
+            else throw new Error("Dynamic require returned undefined"); // Forcer une erreur si undefined
+        } catch (e) {
+             console.error("Dynamic API import failed in listingService:", e);
+             // Si le require dynamique échoue, on ne peut rien faire -> lancer erreur
+             throw new Error("API instance is not available in listingService.");
+        }
+        // Ne devrait plus atteindre ici si on lance une erreur
+        // return { get: ()=>Promise.reject("API not loaded"), post: ()=>Promise.reject("API not loaded"), put: ()=>Promise.reject("API not loaded"), delete: ()=>Promise.reject("API not loaded"), patch: ()=>Promise.reject("API not loaded"), upload: ()=>Promise.reject("API not loaded"), setAuthToken: ()=>{} }; 
+    }
+    // Si apiInstance est défini, le retourner
+    return apiInstance;
+};
+
 const listingService = {
-  /**
-   * Get all listings with filtering and pagination
-   * @param {Object} params Query parameters for filtering and pagination
-   * @returns {Promise<Object>} Paginated listings
-   */
   getListings: async (params = {}) => {
-    return await apiService.get('/listings', params);
+    const currentApi = getApi(); // Obtenir l'instance
+    return await currentApi.get('/listings', params);
   },
-
-  /**
-   * Get a single listing by ID
-   * @param {string} id Listing ID
-   * @returns {Promise<Object>} Listing data
-   */
   getListing: async (id) => {
-    return await apiService.get(`/listings/${id}`);
+    const currentApi = getApi();
+    return await currentApi.get(`/listings/${id}`);
   },
-
-  /**
-   * Create a new listing
-   * @param {Object} listingData Listing data
-   * @returns {Promise<Object>} Created listing
-   */
   createListing: async (listingData) => {
-    return await apiService.post('/listings', listingData);
+    const currentApi = getApi();
+    return await currentApi.post('/listings', listingData);
   },
-
-  /**
-   * Update a listing
-   * @param {string} id Listing ID
-   * @param {Object} listingData Updated listing data
-   * @returns {Promise<Object>} Updated listing
-   */
   updateListing: async (id, listingData) => {
-    return await apiService.put(`/listings/${id}`, listingData);
+    const currentApi = getApi();
+    return await currentApi.put(`/listings/${id}`, listingData);
   },
-
-  /**
-   * Delete a listing
-   * @param {string} id Listing ID
-   * @returns {Promise<Object>} Deletion result
-   */
   deleteListing: async (id) => {
-    return await apiService.delete(`/listings/${id}`);
+    const currentApi = getApi();
+    return await currentApi.delete(`/listings/${id}`); 
   },
-
-  /**
-   * Get listings for the currently logged in host
-   * @param {Object} params Query parameters for filtering and pagination
-   * @returns {Promise<Object>} Paginated host listings
-   */
   getMyListings: async (params = {}) => {
-    return await apiService.get('/listings/me', params);
+    const currentApi = getApi();
+    return await currentApi.get('/listings/me', params);
   },
-
-  /**
-   * Apply for a listing as a cleaner
-   * @param {string} listingId Listing ID
-   * @returns {Promise<Object>} Application result
-   */
   applyForListing: async (listingId) => {
-    return await apiService.post(`/listings/${listingId}/apply`);
+    const currentApi = getApi();
+    return await currentApi.post(`/listings/${listingId}/apply`);
   },
-
-  /**
-   * Get matching listings for a cleaner based on preferences
-   * @param {Object} params Query parameters for filtering and pagination
-   * @returns {Promise<Object>} Paginated matching listings
-   */
   getMatchingListings: async (params = {}) => {
-    return await apiService.get('/listings/matches', params);
+    console.log("[listingService] getMatchingListings called. Getting API instance...");
+    const currentApi = getApi(); // Obtenir l'instance
+    console.log("[listingService] API instance obtained. Calling get...");
+    return await currentApi.get('/listings/matches', params);
   },
-
-  /**
-   * Calculate the price for a listing
-   * @param {Object} listingData Listing data for price calculation
-   * @returns {Promise<Object>} Price calculation result
-   */
   calculatePrice: async (listingData) => {
-    return await apiService.post('/listings/calculate-price', listingData);
+    const currentApi = getApi();
+    return await currentApi.post('/listings/calculate-price', listingData);
   },
-
-  /**
-   * Upload images for a listing
-   * @param {string} listingId Listing ID
-   * @param {FormData} formData Form data with images
-   * @returns {Promise<Object>} Upload result
-   */
   uploadImages: async (listingId, formData) => {
-    return await apiService.upload(`/listings/${listingId}/images`, formData);
+    const currentApi = getApi();
+    return await currentApi.upload(`/listings/${listingId}/images`, formData);
   },
-
-  /**
-   * Get applications for a specific listing
-   * @param {string} listingId Listing ID
-   * @param {Object} params Query parameters for filtering and pagination
-   * @returns {Promise<Object>} Paginated applications
-   */
   getApplications: async (listingId, params = {}) => {
-    return await apiService.get(`/listings/${listingId}/applications`, params);
+    const currentApi = getApi();
+    return await currentApi.get(`/listings/${listingId}/applications`, params);
   }
 };
 
