@@ -288,7 +288,6 @@ const manageApplicationInternal = async (req, status) => {
     await listing.save();
 
     // Notification
-    // Attention: req.params.cleanerId est l'ID Cleaner, il faut trouver l'ID User associé
     const cleanerProfile = await Cleaner.findById(req.params.cleanerId);
     if (cleanerProfile && cleanerProfile.user) {
         const cleanerUserId = cleanerProfile.user;
@@ -335,24 +334,41 @@ exports.searchListings = asyncHandler(async (req, res, next) => {
   const cleaner = await Cleaner.findOne({ user: req.user.id }).populate('user');
   if (!cleaner) return next(new ErrorResponse(`Profil Cleaner non trouvé`, 404));
 
-  const query = { status: 'open' };
+  // S'assurer que workPreferences existe pour éviter les erreurs plus loin
+  const preferences = cleaner.workPreferences || {};
+  const userLocation = cleaner.user?.location;
 
-  if (cleaner.workPreferences?.preferredAccommodationTypes?.length > 0) {
-    query.accommodationType = { $in: cleaner.workPreferences.preferredAccommodationTypes };
+  const query = { status: 'open' }; // Chercher seulement 'open'
+
+  // Filtres
+  if (preferences.preferredAccommodationTypes?.length > 0) {
+    query.accommodationType = { $in: preferences.preferredAccommodationTypes };
   }
 
-  if (cleaner.user?.location?.coordinates && cleaner.workPreferences?.workingRadius > 0) {
-        const [lng, lat] = cleaner.user.location.coordinates;
-        const radiusInKm = cleaner.workPreferences.workingRadius;
-        const radiusInRadians = radiusInKm / 6378.1;
-         query['location.coordinates'] = {
-            $geoWithin: { $centerSphere: [ [lng, lat], radiusInRadians ] }
-         };
+  // Filtre par rayon - CORRIGÉ et ROBUSTIFIÉ
+  if (userLocation?.coordinates?.coordinates && preferences.workingRadius > 0) {
+      const coordsArray = userLocation.coordinates.coordinates; // Accéder au tableau nested
+      // Vérifier que c'est bien un tableau avec 2 nombres
+      if (Array.isArray(coordsArray) && coordsArray.length === 2 && !isNaN(coordsArray[0]) && !isNaN(coordsArray[1])) {
+          const [lng, lat] = coordsArray; // Destructuration OK maintenant
+          const radiusInKm = preferences.workingRadius;
+          const radiusInRadians = radiusInKm / 6378.1; // Rayon de la Terre en km
+          query['location.coordinates'] = { // Utiliser le bon chemin indexé
+              $geoWithin: { $centerSphere: [ [lng, lat], radiusInRadians ] }
+          };
+           console.log("Recherche par rayon activée:", query['location.coordinates']);
+      } else {
+           console.warn("Coordonnées utilisateur invalides trouvées:", coordsArray);
+      }
+  } else {
+       console.log("Pas de filtre par rayon appliqué (coordonnées ou rayon manquants/invalides)");
   }
+
+  // ... Autres filtres potentiels (dates, etc.) ...
 
   const listings = await Listing.find(query)
     .populate({ path: 'host', select: 'firstName lastName avatar rating' })
-    .limit(parseInt(req.query.limit, 10) || 20);
+    .limit(parseInt(req.query.limit, 10) || 20); // Limiter les résultats
 
   res.status(200).json({ success: true, count: listings.length, data: listings });
 });
