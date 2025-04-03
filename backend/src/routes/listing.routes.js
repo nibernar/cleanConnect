@@ -9,97 +9,72 @@ const {
   uploadListingPhoto,
   getMyListings,
   applyToListing,
-  manageApplication,
+  // manageApplication, // Plus exporté directement si on utilise accept/reject
   searchListings,
   getApplications,
-  acceptApplication,
-  rejectApplication
-} = require('../controllers/listing.controller');
+  acceptApplication, // Utiliser la fonction spécifique
+  rejectApplication  // Utiliser la fonction spécifique
+} = require('../controllers/listing.controller'); // S'assurer que toutes ces fonctions sont exportées
 
 const Listing = require('../models/Listing');
-const bookingRouter = require('./booking.routes');
+const bookingRouter = require('./booking.routes'); // Assurez-vous que ce fichier existe et exporte un routeur
 
 const router = express.Router({ mergeParams: true });
 
 const { protect, authorize } = require('../middleware/auth');
 const advancedResults = require('../middleware/advancedResults');
 
-// Re-route into other resource routers
+// Re-route vers les réservations associées à une annonce
 router.use('/:listingId/bookings', bookingRouter);
 
-// Routes principales de listings
+// --- Routes Principales ---
 router
   .route('/')
-  .get(advancedResults(Listing, {
-    path: 'host',
-    select: 'name description'
-  }), getListings)
+  .get(advancedResults(Listing, { path: 'host', select: 'firstName lastName avatar rating' }), getListings) // Utiliser le populate corrigé
   .post(protect, authorize('host', 'admin'), createListing);
 
-// Routes pour les listings d'un hébergeur
+// --- Routes Spécifiques à l'Utilisateur Connecté ---
 router
-  .route('/me')
+  .route('/me') // Annonces de l'hôte connecté
   .get(protect, authorize('host', 'admin'), getMyListings);
 
 router
-.route('/create')
-.get((req, res) => {
-  res.status(200).json({ message: 'Formulaire de création d\'annonce' });
-});
-
-router
-  .route('/create/applications')
-  .get((req, res) => {
-    res.status(200).json({ message: 'Pas d\'applications pour une annonce non créée' });
-  });
-
-// Routes pour rechercher des listings (pour les nettoyeurs)
-router
-  .route('/matches')
+  .route('/matches') // Recherche pour le cleaner connecté
   .get(protect, authorize('cleaner'), searchListings);
 
-// Routes pour rechercher des listings (pour les nettoyeurs)
+// --- Routes Publiques ou Basées sur Paramètres ---
 router
-  .route('/matches')
-  .get(protect, authorize('cleaner'), searchListings);
-
-router
-  .route('/radius/:zipcode/:distance')
+  .route('/radius/:zipcode/:distance') // Recherche par rayon
   .get(getListingsInRadius);
 
-// Routes pour un listing spécifique
+// --- Routes pour une Annonce Spécifique par ID ---
 router
   .route('/:id')
-  .get(getListing)
+  .get(protect, getListing) // Mettre protect si on ne veut pas que ce soit public
   .put(protect, authorize('host', 'admin'), updateListing)
   .delete(protect, authorize('host', 'admin'), deleteListing);
 
-// Route pour télécharger une photo
 router
-  .route('/:id/photo')
+  .route('/:id/photo') // Upload photo pour une annonce
   .put(protect, authorize('host', 'admin'), uploadListingPhoto);
 
-// Routes pour les candidatures
+// --- Routes de Candidature (Cleaner) ---
 router
   .route('/:id/apply')
   .post(protect, authorize('cleaner'), applyToListing);
 
+// --- Routes de Gestion des Candidatures (Host) ---
 router
-  .route('/:id/applications')
+  .route('/:id/applications') // Voir les candidatures d'une annonce
   .get(protect, authorize('host', 'admin'), getApplications);
 
 router
-  .route('/:id/applications/:cleanerId/accept')
-  .put(protect, authorize('host', 'admin'), (req, res, next) => {
-    req.body.status = 'accepted';
-    manageApplication(req, res, next);
-  });
+  .route('/:id/applications/:cleanerId/accept') // Accepter une candidature
+  .put(protect, authorize('host', 'admin'), acceptApplication); // Utilise le contrôleur dédié
 
 router
-  .route('/:id/applications/:cleanerId/reject')
-  .put(protect, authorize('host', 'admin'), (req, res, next) => {
-    req.body.status = 'rejected';
-    manageApplication(req, res, next);
-  });
+  .route('/:id/applications/:cleanerId/reject') // Rejeter une candidature
+  .put(protect, authorize('host', 'admin'), rejectApplication); // Utilise le contrôleur dédié
+
 
 module.exports = router;

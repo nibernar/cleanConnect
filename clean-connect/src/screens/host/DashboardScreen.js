@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  StyleSheet,
+  Text,
+  ScrollView,
+  TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   Alert
 } from 'react-native';
 import { router } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { getHostStats, getActiveListings, clearErrors } from '../../redux/slices/hostSlice';
+// MODIFICATION: Importer clearHostErrors
+import { getHostStats, getActiveListings, clearHostErrors } from '../../redux/slices/hostSlice';
 import { getUnreadNotificationsCount } from '../../redux/slices/notificationsSlice';
 import Card from '../../components/common/Card';
 import ListingCard from '../../components/host/ListingCard';
@@ -25,15 +26,15 @@ import { formatCurrency, formatDate, formatTimeRange } from '../../utils/formatt
 
 const DashboardScreen = () => {
   const dispatch = useDispatch();
-  
+
   // Utiliser à la fois auth.user et user.user pour garantir la compatibilité
   const authUser = useSelector(state => state.auth.user);
   const userFromUserState = useSelector(state => state.user.user);
   const authToken = useSelector(state => state.auth.token);
-  
+
   // Préférer user.user car il est synchronisé avec auth.user mais peut contenir plus de données
   const user = userFromUserState || authUser;
-  
+
   const { stats, activeListings, loading, error } = useSelector(state => state.host);
   const { unreadCount } = useSelector(state => state.notifications);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,12 +47,12 @@ const DashboardScreen = () => {
   const checkAuthStatus = async () => {
     try {
       const token = await checkAuthToken();
-      
+
       // Définir manuellement le token dans l'API si présent
       if (token) {
         api.setAuthToken(token);
       }
-      
+
       setAuthCheckComplete(true);
       return token;
     } catch (error) {
@@ -61,16 +62,14 @@ const DashboardScreen = () => {
   };
 
   useEffect(() => {
-    // Clear any previous errors
-    dispatch(clearErrors());
-    
+    // MODIFICATION: Utiliser clearHostErrors()
+    dispatch(clearHostErrors());
+
     // Vérifier l'état de l'authentification avant de charger les données
     checkAuthStatus().then(isAuthenticated => {
       if (isAuthenticated) {
         loadDashboardData();
       } else {
-        // Pour éviter de bloquer l'utilisateur, on charge quand même les données
-        // Les slices Redux utiliseront les endpoints de debug en cas d'erreur d'auth
         loadDashboardData();
       }
     });
@@ -84,8 +83,9 @@ const DashboardScreen = () => {
 
   const onRefresh = () => {
     setRefreshing(true);
-    dispatch(clearErrors());
-    
+    // MODIFICATION: Utiliser clearHostErrors()
+    dispatch(clearHostErrors());
+
     // Vérifier l'authentification à nouveau sur le rafraîchissement
     checkAuthStatus().then(isAuthenticated => {
       Promise.all([
@@ -135,10 +135,11 @@ const DashboardScreen = () => {
     // Show error if we have one
     if (error && !refreshing) {
       return (
-        <ApiErrorDisplay 
-          error={error} 
+        <ApiErrorDisplay
+          error={error}
           onRetry={() => {
-            dispatch(clearErrors());
+            // MODIFICATION: Utiliser clearHostErrors()
+            dispatch(clearHostErrors());
             checkAuthStatus().then(() => loadDashboardData());
           }}
           message="Impossible de charger les annonces actives"
@@ -153,7 +154,7 @@ const DashboardScreen = () => {
           <View style={styles.emptyContent}>
             <Ionicons name="document-outline" size={50} color={colors.textLight} />
             <Text style={styles.emptyText}>Vous n'avez pas d'annonces actives</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.createButton}
               onPress={navigateToCreateListing}
             >
@@ -166,21 +167,21 @@ const DashboardScreen = () => {
 
     // Otherwise, show the list of listings
     return (
-      <ScrollView 
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listingsContainer}
       >
         {Array.isArray(activeListings) && activeListings.map(listing => (
-          <ListingCard 
+          <ListingCard
             key={listing._id || `listing-${Math.random()}`}
             listing={listing}
             onPress={() => navigateToListingDetail(listing._id)}
             style={styles.listingCard}
           />
         ))}
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.addListingCard}
           onPress={navigateToCreateListing}
         >
@@ -192,7 +193,7 @@ const DashboardScreen = () => {
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       refreshControl={
         <RefreshControl
@@ -212,7 +213,7 @@ const DashboardScreen = () => {
           </Text>
         </View>
         <View style={styles.notificationsContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.iconButton}
             onPress={navigateToNotifications}
           >
@@ -223,7 +224,7 @@ const DashboardScreen = () => {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.iconButton}
             onPress={navigateToMessages}
           >
@@ -234,7 +235,7 @@ const DashboardScreen = () => {
       </View>
 
       <View style={styles.quickActions}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.actionButton}
           onPress={navigateToCreateListing}
         >
@@ -244,7 +245,7 @@ const DashboardScreen = () => {
           <Text style={styles.actionText}>Nouvelle annonce</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.actionButton}
           onPress={navigateToListings}
         >
@@ -254,7 +255,7 @@ const DashboardScreen = () => {
           <Text style={styles.actionText}>Mes annonces</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.actionButton}
           onPress={navigateToApplications}
         >
@@ -320,7 +321,7 @@ const DashboardScreen = () => {
                 <Text style={styles.seeAllText}>Voir tout</Text>
               </TouchableOpacity>
             </View>
-            
+
             {renderActiveListings()}
           </View>
 
@@ -328,7 +329,7 @@ const DashboardScreen = () => {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Prochains services</Text>
             </View>
-            
+
             {!Array.isArray(stats?.upcomingBookings) || stats?.upcomingBookings?.length === 0 ? (
               <Card style={styles.emptyCard}>
                 <View style={styles.emptyContent}>
@@ -340,10 +341,10 @@ const DashboardScreen = () => {
               Array.isArray(stats?.upcomingBookings) && stats?.upcomingBookings.map(booking => (
                 <Card key={booking._id} style={styles.bookingCard}>
                   <View style={styles.bookingHeader}>
-                    <Text style={styles.bookingTitle}>{booking.listing.title}</Text>
+                    <Text style={styles.bookingTitle}>{booking.listing?.title || 'Titre non disponible'}</Text>
                     <Text style={styles.bookingStatus}>{booking.status}</Text>
                   </View>
-                  
+
                   <View style={styles.bookingDetails}>
                     <View style={styles.bookingDetail}>
                       <Ionicons name="calendar-outline" size={18} color={colors.textLight} />
@@ -351,22 +352,25 @@ const DashboardScreen = () => {
                         {formatDate(booking)}
                       </Text>
                     </View>
-                    
+
                     <View style={styles.bookingDetail}>
                       <Ionicons name="time-outline" size={18} color={colors.textLight} />
                       <Text style={styles.bookingText}>
                         {formatTimeRange(booking)}
                       </Text>
                     </View>
-                    
-                    <View style={styles.bookingDetail}>
-                      <Ionicons name="person-outline" size={18} color={colors.textLight} />
-                      <Text style={styles.bookingText}>
-                        {booking.cleaner.name}
-                      </Text>
-                    </View>
+
+                    {booking.cleaner && (
+                      <View style={styles.bookingDetail}>
+                        <Ionicons name="person-outline" size={18} color={colors.textLight} />
+                        <Text style={styles.bookingText}>
+                          {/* Vérifier que cleaner.name existe */}
+                          {`${booking.cleaner.firstName || ''} ${booking.cleaner.lastName || ''}`.trim() || 'Nom non disponible'}
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                  
+
                   <TouchableOpacity
                     style={styles.viewDetailsButton}
                     onPress={() => router.push(`/(host)/bookings/${booking._id}`)}
@@ -384,6 +388,7 @@ const DashboardScreen = () => {
   );
 };
 
+// Styles (inchangés)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -573,7 +578,7 @@ const styles = StyleSheet.create({
   bookingStatus: {
     fontSize: 12,
     fontWeight: '500',
-    color: colors.success,
+    color: colors.success, // Adapter la couleur selon le statut si nécessaire
   },
   bookingDetails: {
     marginBottom: 15,

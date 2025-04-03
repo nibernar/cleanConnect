@@ -1,13 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { api as apiInstance } from '../../services/api'; 
-import { 
-  apiCallWithDebugFallback, 
-  apiCallWithRetry, 
-  hostDebugApi 
+import { api as apiInstance } from '../../services/api';
+import {
+  apiCallWithDebugFallback,
+  apiCallWithRetry,
+  hostDebugApi
 } from '../../utils/apiDebugUtils';
-import { HOST_ACTION_TYPES } from '../actionTypes';
+// import { HOST_ACTION_TYPES } from '../actionTypes'; // Plus nécessaire pour ce reducer
 
-// --- Copier/Coller du Wrapper getApi --- 
+// --- Copier/Coller du Wrapper getApi ---
 const getApi = () => {
     console.log("[getApi in hostSlice] Checking apiInstance. Is it defined?", !!apiInstance);
     if (!apiInstance) {
@@ -25,21 +25,20 @@ const getApi = () => {
     }
     return apiInstance;
 };
-// --- Fin Wrapper --- 
+// --- Fin Wrapper ---
 
-// --- Thunks Restaurés --- 
+// --- Thunks Restaurés ---
 export const getHostStats = createAsyncThunk(
   'host/getStats',
   async (_, { rejectWithValue }) => {
     try {
       const currentApi = getApi();
-      // Assurez-vous que getHostStats existe sur l'objet api exporté
       const response = await apiCallWithRetry(
         () => currentApi.getHostStats(),
         null,
         { maxRetries: 2 }
       );
-      return response.data || response; // Adapter si la structure est différente
+      return response.data || response;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });
     }
@@ -49,11 +48,10 @@ export const getHostStats = createAsyncThunk(
 export const getActiveListings = createAsyncThunk(
   'host/getActiveListings',
   async (limit = 5, { rejectWithValue, dispatch }) => {
-    try {      
+    try {
       const currentApi = getApi();
-      // Assurez-vous que getHostActiveListings existe sur l'objet api exporté
       const response = await apiCallWithDebugFallback(
-        () => currentApi.getHostActiveListings(limit), 
+        () => currentApi.getHostActiveListings(limit),
         () => hostDebugApi.getActiveListings() // Fallback debug
       );
       return response.data || (Array.isArray(response) ? response : []);
@@ -62,7 +60,7 @@ export const getActiveListings = createAsyncThunk(
     }
   }
 );
-// --- Fin Thunks --- 
+// --- Fin Thunks ---
 
 // Initial state
 const initialState = { stats: { monthlySpend: 0, completedBookings: 0, activeListings: 0, pendingApplications: 0, upcomingBookings: [] }, activeListings: [], loading: false, error: null };
@@ -73,9 +71,9 @@ const hostSlice = createSlice({
   initialState,
   reducers: {
     resetHostState: () => initialState,
-    // Utiliser la clé string pour le reducer
-    [HOST_ACTION_TYPES.CLEAR_ERROR]: (state) => {
-      console.log('[hostSlice] Reducer for CLEAR_ERROR called');
+    // MODIFICATION: Nommer explicitement le reducer
+    clearHostErrors(state) {
+      console.log('[hostSlice] Reducer for clearHostErrors called');
       state.error = null;
     }
   },
@@ -98,9 +96,10 @@ const hostSlice = createSlice({
   }
 });
 
-export const { resetHostState } = hostSlice.actions;
+// MODIFICATION: Exporter la nouvelle action 'clearHostErrors'
+export const { resetHostState, clearHostErrors } = hostSlice.actions;
 
-// --- Sélecteurs --- 
+// --- Sélecteurs ---
 export const selectHostStats = (state) => state.host.stats;
 export const selectHostActiveListings = (state) => state.host.activeListings;
 export const selectHostLoading = (state) => state.host.loading;
